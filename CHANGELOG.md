@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.3.0] - 2026-06-05
+
+### Added
+
+- `verse_docs_list_chapters` and `verse_docs_list_api_modules` tools wrapping upstream `list_chapters` and `list_verse_api_modules`.
+- Human commands `/verse-docs:list-chapters` and `/verse-docs:list-api-modules` for enumerating chapters and API modules without positional args.
+
 ## [0.2.0] - 2026-06-04
 
 ### Added

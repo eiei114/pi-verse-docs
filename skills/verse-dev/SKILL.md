@@ -13,7 +13,10 @@ Use this skill when the user is working on Verse, UEFN APIs, or Verse MCP-backed
 2. If this machine has not warmed the cache yet, suggest `verse_docs_cache_all`.
 3. For UEFN devices, classes, methods, and modules, use `verse_docs_search_api` **before guessing names**.
 4. For language semantics like `decides`, failure contexts, concurrency, modules, or effects, use `verse_docs_search`.
-5. If search results are not enough, use:
+5. When you need valid chapter or module names before a full read, use:
+   - `verse_docs_list_chapters`
+   - `verse_docs_list_api_modules`
+6. If search results are not enough, use:
    - `verse_docs_get_chapter`
    - `verse_docs_get_api_module`
 

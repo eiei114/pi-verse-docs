@@ -21,6 +21,14 @@ rl.on("line", (line) => {
     console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { content: [{ type: "text", text: "Cached 21/21 pages." }] } }));
     return;
   }
+  if (message.method === "tools/call" && message.params?.name === "list_chapters") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { content: [{ type: "text", text: "failure\nconcurrency\nclasses-interfaces" }] } }));
+    return;
+  }
+  if (message.method === "tools/call" && message.params?.name === "list_verse_api_modules") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { content: [{ type: "text", text: "creative_device\nfort_character" }] } }));
+    return;
+  }
   if (message.id !== undefined) {
     console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "Method not found" } }));
   }
@@ -47,6 +55,24 @@ test("callVerseDocsTool appends cache dir for cache_all_chapters", async () => {
   assert.match(result.text, /Cached 21\/21 pages\./);
   assert.match(result.text, /Cache dir:/);
   assert.ok(result.details.cacheDir);
+});
+
+test("callVerseDocsTool formats list_chapters through tools/call", async () => {
+  const result = await callVerseDocsTool("list_chapters", {}, {
+    resolveCommand: async () => ({ supported: true, platform: process.platform, found: true, command: fakeCommand, checked: [], message: "ok" }),
+  });
+
+  assert.match(result.text, /failure/);
+  assert.equal(result.details.upstreamTool, "list_chapters");
+});
+
+test("callVerseDocsTool formats list_verse_api_modules through tools/call", async () => {
+  const result = await callVerseDocsTool("list_verse_api_modules", {}, {
+    resolveCommand: async () => ({ supported: true, platform: process.platform, found: true, command: fakeCommand, checked: [], message: "ok" }),
+  });
+
+  assert.match(result.text, /creative_device/);
+  assert.equal(result.details.upstreamTool, "list_verse_api_modules");
 });
 
 test("callVerseDocsTool maps MCP errors to actionable text", async () => {
