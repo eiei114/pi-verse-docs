@@ -14,6 +14,8 @@ On npmjs.com, configure Trusted Publishing for this package:
 
 ## Publish
 
+### Recommended: GitHub Actions Trusted Publishing
+
 ```bash
 npm version patch
 git push
@@ -25,6 +27,21 @@ The `v*.*.*` tag also triggers `.github/workflows/publish.yml`, which runs CI an
 Publishing also runs when a GitHub Release is published, and can be run manually from GitHub Actions with `workflow_dispatch`.
 
 The workflow skips `name@version` if that exact package version already exists on npm.
+
+### Manual local publish with OTP
+
+If you want to publish directly from a maintainer machine instead of GitHub Actions:
+
+```bash
+npm run ci
+npm publish --access public
+```
+
+- `npm whoami` should already work
+- npm CLI will prompt for OTP if your account requires 2FA for publish
+- you can also pass `--otp=<code>` explicitly
+- package name/version must not already exist on npm
+- uncommitted local files are what get published, so review `git status` first
 
 ## GitHub Actions requirements
 
@@ -42,4 +59,5 @@ The workflow skips `name@version` if that exact package version already exists o
 - [ ] npm Trusted Publisher is configured
 - [ ] `npm run ci` passes
 - [ ] `npm pack --dry-run` contains only intended files
-- [ ] `CHANGELOG.md` has the release date\n
+- [ ] `CHANGELOG.md` has the release date
+- [ ] If publishing locally, `npm whoami` works and OTP device/app is ready

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
+## [0.2.0] - 2026-06-04
+
+### Added
+
+- On-demand `verse-mcp` locator with direct `verse-mcp` PATH resolution and `uvx` fallback.
+- One-shot stdio MCP client for short-lived Verse docs tool calls.
+- `verse_docs_status`, `verse_docs_search`, `verse_docs_search_api`, `verse_docs_get_chapter`, `verse_docs_get_api_module`, and `verse_docs_cache_all`.
+- Human commands `/verse-docs:status`, `/verse-docs:search`, `/verse-docs:search-api`, and `/verse-docs:cache`.
+- Python / install readiness checks, cache-dir reporting, and tool-result formatters with output truncation.
+- Verse workflow skill guidance for using API search before writing non-trivial UEFN Verse code.
+
+### Changed
+
+- README now documents prerequisites, install paths, available tools, commands, cache environment variables, and MVP workflow.
+
 ## [0.1.2] - 2026-06-04
 
 ### Changed
