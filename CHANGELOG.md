@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning.
 
-## [0.3.0] - Unreleased
+## [0.3.1] - 2026-06-05
+
+### Changed
+
+- Release housekeeping: finalize 0.3.0 changelog date.
+
+## [0.3.0] - 2026-06-05
 
 ### Added
 
