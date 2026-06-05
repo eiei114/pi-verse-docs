@@ -63,7 +63,9 @@ pi -e .
 | `verse_docs_status` | Check Python / `verse-mcp` / cache readiness, optional MCP ping |
 | `verse_docs_search` | Search Verse language docs |
 | `verse_docs_search_api` | Search Verse / UEFN API digest |
+| `verse_docs_list_chapters` | List Verse language book chapters |
 | `verse_docs_get_chapter` | Read a full Verse book chapter |
+| `verse_docs_list_api_modules` | List Verse / UEFN API digest modules |
 | `verse_docs_get_api_module` | Read a full API digest section |
 | `verse_docs_cache_all` | Warm the Verse docs cache |
 
@@ -74,6 +76,8 @@ pi -e .
 | `/verse-docs:status` | Show install / readiness summary |
 | `/verse-docs:search` | Prompt for a Verse language docs query |
 | `/verse-docs:search-api` | Prompt for a Verse / UEFN API query |
+| `/verse-docs:list-chapters` | List Verse language book chapters |
+| `/verse-docs:list-api-modules` | List Verse / UEFN API digest modules |
 | `/verse-docs:cache` | Pre-download Verse chapters for faster searches |
 
 ## Recommended workflow
@@ -84,7 +88,8 @@ When working with Verse or UEFN:
 2. Run `verse_docs_cache_all` once per machine/session if repeated lookups are likely.
 3. Use `verse_docs_search_api` before writing non-trivial UEFN API code.
 4. Use `verse_docs_search` for language semantics like failure, decides, concurrency, effects, or modules.
-5. Use `verse_docs_get_chapter` / `verse_docs_get_api_module` for deeper reading after search.
+5. Use `verse_docs_list_chapters` / `verse_docs_list_api_modules` when you need valid names before a full read.
+6. Use `verse_docs_get_chapter` / `verse_docs_get_api_module` for deeper reading after search.
 
 ## Configuration
 

@@ -38,6 +38,11 @@ const cacheAllParameters = Type.Object({
   timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for cache warm-up. Default: 120000." })),
 });
 
+const listParameters = Type.Object({
+  maxChars: Type.Optional(Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` })),
+  timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for verse-mcp. Default: 30000." })),
+});
+
 async function runVerseTool(
   upstreamTool: string,
   args: Record<string, unknown>,
@@ -101,6 +106,30 @@ export default function (pi: ExtensionAPI) {
 
       try {
         const result = await runVerseTool("cache_all_chapters", {}, { timeoutMs: 120_000, signal: ctx.signal });
+        ctx.ui.notify(result.text, "info");
+      } catch (error) {
+        ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
+      }
+    },
+  });
+
+  pi.registerCommand("verse-docs:list-chapters", {
+    description: "List Verse language book chapters via verse-mcp",
+    handler: async (_args, ctx) => {
+      try {
+        const result = await runVerseTool("list_chapters", {}, { timeoutMs: 30_000, signal: ctx.signal });
+        ctx.ui.notify(result.text, "info");
+      } catch (error) {
+        ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
+      }
+    },
+  });
+
+  pi.registerCommand("verse-docs:list-api-modules", {
+    description: "List Verse / UEFN API digest modules via verse-mcp",
+    handler: async (_args, ctx) => {
+      try {
+        const result = await runVerseTool("list_verse_api_modules", {}, { timeoutMs: 30_000, signal: ctx.signal });
         ctx.ui.notify(result.text, "info");
       } catch (error) {
         ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
@@ -199,6 +228,42 @@ export default function (pi: ExtensionAPI) {
     parameters: getApiModuleParameters,
     async execute(_toolCallId, params, signal) {
       const result = await runVerseTool("get_verse_api_module", { module_name: params.moduleName }, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      return {
+        content: [{ type: "text", text: result.text }],
+        details: result.details,
+      };
+    },
+  });
+
+  pi.registerTool({
+    name: "verse_docs_list_chapters",
+    label: "Verse Docs List Chapters",
+    description: `List Verse language book chapters via verse-mcp. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
+    promptSnippet: "verse_docs_list_chapters: enumerate valid Verse language chapter names before calling verse_docs_get_chapter",
+    promptGuidelines: [
+      "Use verse_docs_list_chapters when you need valid chapter names or slugs before calling verse_docs_get_chapter.",
+    ],
+    parameters: listParameters,
+    async execute(_toolCallId, params, signal) {
+      const result = await runVerseTool("list_chapters", {}, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      return {
+        content: [{ type: "text", text: result.text }],
+        details: result.details,
+      };
+    },
+  });
+
+  pi.registerTool({
+    name: "verse_docs_list_api_modules",
+    label: "Verse Docs List API Modules",
+    description: `List Verse / UEFN API digest modules via verse-mcp. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
+    promptSnippet: "verse_docs_list_api_modules: enumerate valid API module or class names before calling verse_docs_get_api_module",
+    promptGuidelines: [
+      "Use verse_docs_list_api_modules when you need valid module or class names before calling verse_docs_get_api_module.",
+    ],
+    parameters: listParameters,
+    async execute(_toolCallId, params, signal) {
+      const result = await runVerseTool("list_verse_api_modules", {}, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
