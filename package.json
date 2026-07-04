@@ -1,6 +1,6 @@
 {
   "name": "pi-verse-docs",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Pi extension for on-demand Verse / UEFN docs lookup via verse-mcp.",
   "type": "module",
   "license": "MIT",
