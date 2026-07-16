@@ -28,6 +28,8 @@ node -p "require('./package.json').version"
 # 0.3.2
 ```
 
+External-state observation time: `2026-07-16T01:36:00Z` (UTC), covering the npm registry checks and GitHub release checks below.
+
 Current npm public state:
 
 ```bash
@@ -135,7 +137,7 @@ npm run ci
 No correction is applied in this investigation. Safe follow-up options, smallest first:
 
 1. Remove the literal trailing `\n` from `GH_TOKEN` in the `Trigger publish workflow` step.
-2. Consider removing the explicit `gh workflow run publish.yml ...` dispatch and rely on the existing tag / release / main push triggers, or make the dispatch step non-fatal after confirming the tag/release triggers are sufficient.
-3. If keeping the explicit dispatch, add a non-publish validation check such as `gh workflow view publish.yml` using the same token before dispatch, and document the expected permissions.
+2. Keep the explicit `gh workflow run publish.yml ...` dispatch fatal so the release job fails if the dispatch request cannot be authenticated or accepted. Do not make this step non-fatal unless the release flow also verifies publication afterward by locating the expected `Publish to npm` run for the release/tag and waiting for it to complete successfully.
+3. If keeping the explicit dispatch, add read-only workflow visibility and authorization diagnostics before dispatch. `gh workflow view publish.yml` should be documented only as a workflow visibility check; dispatch authorization and token formatting should be verified separately with the exact `GH_TOKEN` assignment and required `actions: write` permission for `workflow_dispatch`.
 
 Because `publish.yml` already skips an existing package version, duplicate-version handling appears to be covered for the publish job itself.
