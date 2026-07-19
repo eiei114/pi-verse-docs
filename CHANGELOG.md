@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add Buy Me a Coffee sponsor button to README and native GitHub funding link via `.github/FUNDING.yml`.
+- Fix `docs/examples.md` to document current `pi-verse-docs` commands, tools, and skill paths instead of stale template placeholders.
 
 All notable changes to this project will be documented in this file.
 

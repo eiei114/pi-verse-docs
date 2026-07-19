@@ -1,13 +1,18 @@
 # Examples
 
-This template ships one minimal example for each Pi package resource type.
+`pi-verse-docs` ships one extension entrypoint, one Agent Skill, and optional template placeholders that are not published.
 
 ## Extension
 
-`extensions/hello.ts` registers:
+`extensions/index.ts` registers:
 
-- `/template-hello`
-- a small session status indicator
+- `/verse-docs:status`
+- `/verse-docs:search`
+- `/verse-docs:search-api`
+- `/verse-docs:list-chapters`
+- `/verse-docs:list-api-modules`
+- `/verse-docs:cache`
+- `verse_docs_status`, `verse_docs_search`, `verse_docs_search_api`, `verse_docs_list_chapters`, `verse_docs_list_api_modules`, `verse_docs_get_chapter`, `verse_docs_get_api_module`, and `verse_docs_cache_all`
 
 Try it with:
 
@@ -18,32 +23,28 @@ pi -e .
 Then run:
 
 ```txt
-/template-hello YourName
+/verse-docs:status
+```
+
+Or call a tool from Pi:
+
+```txt
+verse_docs_search query="decides"
 ```
 
 ## Agent Skill
 
-`skills/example-skill/SKILL.md` demonstrates a minimal Agent Skill.
+`skills/verse-dev/SKILL.md` guides Verse / UEFN workflows:
 
-Replace it with your real workflow instructions.
+- check setup with `verse_docs_status`
+- warm cache with `verse_docs_cache_all`
+- verify API names with `verse_docs_search_api` before writing device code
 
-## Prompt template
+## Optional template placeholders
 
-`prompts/example.md` demonstrates a tiny prompt template with one variable.
+These files remain from the Pi package template and are not wired into `package.json` `pi` resources:
 
-## Theme
+- `prompts/example.md`
+- `themes/example-theme.json`
 
-`themes/example-theme.json` is a placeholder theme. Replace it or remove `themes/` if your package does not ship themes.
-
-## Typed custom tool
-
-`extensions/index.ts` registers:
-
-- `/template-info`
-- `template_greet` custom tool
-
-The tool demonstrates:
-
-- TypeBox object parameters
-- a string enum schema via `StringEnum`
-- shared logic imported from `lib/greeting.ts`
+Remove them if your fork does not need prompt or theme samples.
