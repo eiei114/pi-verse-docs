@@ -28,7 +28,8 @@
     "extensions/",
     "lib/",
     "skills/",
-    "docs/",
+    "docs/examples.md",
+    "docs/release.md",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
