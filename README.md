@@ -1,5 +1,7 @@
 # Pi Verse Docs
 
+[![Join dotfield.xyz on Discord](https://img.shields.io/badge/Join%20dotfield.xyz%20on%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/4945dXZVW5)
+
 [![CI](https://github.com/eiei114/pi-verse-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/eiei114/pi-verse-docs/actions/workflows/ci.yml)
 [![Publish](https://github.com/eiei114/pi-verse-docs/actions/workflows/publish.yml/badge.svg)](https://github.com/eiei114/pi-verse-docs/actions/workflows/publish.yml)
 [![npm version](https://img.shields.io/npm/v/pi-verse-docs.svg)](https://www.npmjs.com/package/pi-verse-docs)
@@ -146,4 +148,4 @@ For vulnerability reporting, see [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-MIT
+MIT
