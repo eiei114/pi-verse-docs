@@ -31,4 +31,5 @@ Use this skill when the user is working on Verse, UEFN APIs, or Verse MCP-backed
 
 - Verse compile / LSP diagnostics: external `verse-diagnostics-mcp` style tools
 - UEFN editor automation: separate editor-control MCPs, not bundled here
-- Ecosystem context: `4_Project/OSS/pi-verse-docs/Docs/uefn-mcp-ecosystem.md`
+- Upstream Verse MCP: https://github.com/BurgersJackson/verse-mcp
+- pi-verse-docs package: https://github.com/eiei114/pi-verse-docs
