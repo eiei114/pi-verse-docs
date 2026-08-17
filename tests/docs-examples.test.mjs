@@ -29,7 +29,18 @@ test("docs/examples.md documents current pi-verse-docs resources", () => {
   assert.match(examples, /extensions\/index\.ts/);
   assert.match(examples, /skills\/verse-dev\/SKILL\.md/);
   assert.match(examples, /verse_docs_search/);
+  assert.match(examples, /verse_docs_search_api/);
+  assert.match(examples, /verse_docs_list_chapters/);
   assert.match(examples, /\/verse-docs:status/);
+  assert.match(examples, /\/verse-docs:search-api/);
+});
+
+test("docs/examples.md includes at least three realistic workflow examples", () => {
+  const exampleSections = examples.match(/^## Example \d+:/gm) ?? [];
+  assert.ok(
+    exampleSections.length >= 3,
+    `expected at least 3 workflow examples, found ${exampleSections.length}`,
+  );
 });
 
 test("docs/examples.md paths exist in the repository", async () => {
