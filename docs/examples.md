@@ -1,44 +1,119 @@
 # Examples
 
-`pi-verse-docs` ships one extension entrypoint, one Agent Skill, and optional template placeholders that are not published.
+This document shows realistic `pi-verse-docs` workflows for Verse language and UEFN API reference lookup. Every tool and command below exists in this package — see the [README](../README.md) for install prerequisites.
 
-## Extension
-
-`extensions/index.ts` registers:
-
-- `/verse-docs:status`
-- `/verse-docs:search`
-- `/verse-docs:search-api`
-- `/verse-docs:list-chapters`
-- `/verse-docs:list-api-modules`
-- `/verse-docs:cache`
-- `verse_docs_status`, `verse_docs_search`, `verse_docs_search_api`, `verse_docs_list_chapters`, `verse_docs_list_api_modules`, `verse_docs_get_chapter`, `verse_docs_get_api_module`, and `verse_docs_cache_all`
-
-Try it with:
+## Quick start
 
 ```bash
+pi install git:github.com/eiei114/pi-verse-docs
+```
+
+Local development from a clone:
+
+```bash
+npm install
 pi -e .
 ```
 
-Then run:
+## Example 1: Verify setup before writing Verse code
+
+**Scenario:** You are about to edit Verse gameplay code but are unsure whether Python and `verse-mcp` are available.
+
+**Human command:**
 
 ```txt
 /verse-docs:status
 ```
 
-Or call a tool from Pi:
+**Agent tool:**
+
+```txt
+verse_docs_status ping=true
+```
+
+**When to use:** First session on a machine, after Python upgrades, or when searches fail with spawn errors.
+
+## Example 2: Look up language semantics (`decides`, failure)
+
+**Scenario:** You need to confirm how `decides` affects failure contexts before refactoring a function.
+
+**Agent tool:**
 
 ```txt
 verse_docs_search query="decides"
 ```
 
-## Agent Skill
+**Follow-up for deeper reading:**
 
-`skills/verse-dev/SKILL.md` guides Verse / UEFN workflows:
+```txt
+verse_docs_list_chapters
+verse_docs_get_chapter chapterName="failure"
+```
 
-- check setup with `verse_docs_status`
-- warm cache with `verse_docs_cache_all`
-- verify API names with `verse_docs_search_api` before writing device code
+**Human command alternative:**
+
+```txt
+/verse-docs:search
+```
+
+Enter `decides` when prompted.
+
+## Example 3: Confirm UEFN API names before device code
+
+**Scenario:** You want to call methods on `creative_device` but do not want to guess the module spelling.
+
+**Agent tool:**
+
+```txt
+verse_docs_search_api query="creative_device"
+```
+
+**Follow-up:**
+
+```txt
+verse_docs_list_api_modules
+verse_docs_get_api_module moduleName="creative_device"
+```
+
+**Human command alternative:**
+
+```txt
+/verse-docs:search-api
+```
+
+## Example 4: Warm cache for repeated lookups
+
+**Scenario:** You will search many chapters during a long UEFN session.
+
+**Agent tool:**
+
+```txt
+verse_docs_cache_all
+```
+
+**Human command:**
+
+```txt
+/verse-docs:cache
+```
+
+Run once per machine or session; this warms local Verse language chapters so repeated `verse_docs_search`, `verse_docs_list_chapters`, and `verse_docs_get_chapter` use is faster. It does not accelerate `verse_docs_search_api` or other UEFN API digest lookups.
+
+## Package layout
+
+| Resource | Path | Role |
+|----------|------|------|
+| Extension entrypoint | `extensions/index.ts` | Registers slash commands and agent tools |
+| Agent skill | `skills/verse-dev/SKILL.md` | Guides Pi agents during Verse / UEFN work |
+
+The `verse-dev` skill encodes the same flow as the examples above:
+
+1. `verse_docs_status` when setup is uncertain
+2. `verse_docs_cache_all` when repeated Verse language chapter lookups are expected
+3. `verse_docs_search_api` before writing non-trivial device code; it uses the UEFN API digest separately from the warmed chapter cache
+4. `verse_docs_search` for language semantics
+5. `verse_docs_list_chapters` / `verse_docs_list_api_modules` for valid names
+6. `verse_docs_get_chapter` / `verse_docs_get_api_module` for full reads
 
 ## Optional template placeholders
 
@@ -47,4 +122,9 @@ These files remain from the Pi package template and are not wired into `package.
 - `prompts/example.md`
 - `themes/example-theme.json`
 
-Remove them if your fork does not need prompt or theme samples.
+Remove them in a fork if you do not need prompt or theme samples.
+
+## Related docs
+
+- [README](../README.md) — install, tools table, recommended workflow
+- [docs/release.md](release.md) — publishing and release process
