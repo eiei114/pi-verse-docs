@@ -97,7 +97,7 @@ verse_docs_cache_all
 /verse-docs:cache
 ```
 
-Run once per machine or session; subsequent `verse_docs_search` and `verse_docs_search_api` calls are faster.
+Run once per machine or session; this warms local Verse language chapters so repeated `verse_docs_search`, `verse_docs_list_chapters`, and `verse_docs_get_chapter` use is faster. It does not accelerate `verse_docs_search_api` or other UEFN API digest lookups.
 
 ## Package layout
 
@@ -109,8 +109,8 @@ Run once per machine or session; subsequent `verse_docs_search` and `verse_docs_
 The `verse-dev` skill encodes the same flow as the examples above:
 
 1. `verse_docs_status` when setup is uncertain
-2. `verse_docs_cache_all` when repeated lookups are expected
-3. `verse_docs_search_api` before writing non-trivial device code
+2. `verse_docs_cache_all` when repeated Verse language chapter lookups are expected
+3. `verse_docs_search_api` before writing non-trivial device code; it uses the UEFN API digest separately from the warmed chapter cache
 4. `verse_docs_search` for language semantics
 5. `verse_docs_list_chapters` / `verse_docs_list_api_modules` for valid names
 6. `verse_docs_get_chapter` / `verse_docs_get_api_module` for full reads

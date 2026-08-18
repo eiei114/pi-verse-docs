@@ -53,3 +53,18 @@ test("docs/examples.md paths exist in the repository", async () => {
     await access(new URL(relativePath, examplesPath));
   }
 });
+
+test("docs/examples.md related document links resolve", async () => {
+  const relatedDocLinks = [
+    { label: "README", target: "../README.md" },
+    { label: "docs/release.md", target: "release.md" },
+  ];
+
+  for (const { label, target } of relatedDocLinks) {
+    assert.ok(
+      examples.includes(`[${label}](${target})`),
+      `docs/examples.md should link ${label} to ${target}`,
+    );
+    await access(new URL(target, examplesPath));
+  }
+});
