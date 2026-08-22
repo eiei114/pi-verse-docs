@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [0.3.5] - 2026-08-22
+
+### Changed
+
+- Merge the 2026-08-22 managed OSS dependency and maintenance PR batch.
+
 ### Changed
 
 - Bump package version to `0.3.3` for the next patch release.
