@@ -2,112 +2,75 @@
 
 ## Current release status
 
-**Latest release:** v0.3.1 (2026-06-05) — `verse_docs_list_chapters` / `verse_docs_list_api_modules` tools and human commands.
+**Latest release:** v0.3.5 (2026-08-22) — npm published; includes dependency maintenance batch and refreshed `docs/examples.md`.
 
-**In development:** v0.4.0 — maintenance and cleanup phase.
+**In development:** v0.4.0 — reliability, test coverage, and contributor-facing docs.
 
-**Shipped:**
+**Shipped (recent):**
 
 | Version | Date | Highlights |
 |---------|------|-----------|
+| 0.3.5 | 2026-08-22 | Managed OSS dependency batch; examples doc refresh (DOT-1549) |
+| 0.3.3 | 2026-07-20 | Sponsor/funding links; template bootstrap doc removal (DOT-1238) |
 | 0.3.1 | 2026-06-05 | Changelog housekeeping |
-| 0.3.0 | 2026-06-05 | List tools for chapters and API modules |
+| 0.3.0 | 2026-06-05 | `verse_docs_list_chapters` / `verse_docs_list_api_modules` tools |
 | 0.2.0 | 2026-06-04 | MVP — on-demand MCP client, 6 core tools, verse-dev skill |
-| 0.1.2 | 2026-06-04 | Minimal-docs policy alignment |
-| 0.1.1 | 2026-06-01 | Publish workflow fixes (npm Trusted Publishing) |
-| 0.1.0 | — | Initial Pi package template bootstrap |
 
 ---
 
-## Short-term goals (v0.4.0 – v0.5.0)
+## Short-term priorities (v0.4.0 – v0.5.0)
 
-### Template cleanup
+Focus areas for the next one to two releases:
 
-The repository still carries three template bootstrap docs that were marked for deletion or merge in `docs/template-checklist.md`. These should be cleaned up before v0.4.0.
-
-- Remove `docs/github-template.md`, `docs/repository-settings.md`, `docs/typescript.md`
-- Update `docs/examples.md` to reference the actual verse-docs tools/commands instead of the old template examples (`hello.ts`, `example-skill`, etc.)
-- Remove `docs/template-checklist.md` itself once all items are resolved or acknowledged
-- Verify `package.json` `files` field excludes any removed docs
-
-### Documentation improvements
-
-- Create `docs/usage.md` with a detailed walkthrough covering the recommended workflow (status → cache → search → get) with realistic Verse/UEFN examples
-- Add a troubleshooting section covering common `verse-mcp` setup failures (Python missing, uvx not found, cache permissions)
-
-### Test quality
-
-- Add unit tests for `lib/formatters.ts` (truncation edge cases, non-text MCP results)
-- Add mock-based tests for `verse_docs_status` tool execution path
-- Evaluate adding a linting step (e.g., `eslint` or `biome`) to CI
+1. **Lookup reliability** — tighten error messages, timeout guidance, and cache warm-up docs so first-time users recover from setup failures without support.
+2. **Test coverage gaps** — add direct unit tests for formatters and status formatting; keep integration tests mock-based (no live `verse-mcp` in CI).
+3. **Contributor hygiene** — add a lint step to CI and archive one-off investigation docs that are no longer actionable.
+4. **Search/cache follow-ups** — document `maxChars` / timeout tuning and evaluate whether repeated identical queries within a session need a lightweight cache (future seed, not v0.4.0 blocker).
 
 ---
 
 ## Candidate maintenance seeds
 
-> Each item below is scoped to 30–90 minutes and can be turned into a standalone issue.
+> Each item below is scoped to **30–90 minutes** and can be turned into a standalone backlog issue.
 
-### Seed 1: Remove stale template bootstrap docs (~30 min)
+### Seed 1: Add formatter unit tests (~45 min)
 
-**What:** Delete `docs/github-template.md`, `docs/repository-settings.md`, `docs/typescript.md`, and `docs/template-checklist.md`. Update `package.json` `files` to only include `docs/examples.md` and `docs/release.md` (the two docs that have real project value).
+**What:** Add `tests/formatters.test.mjs` covering `formatMcpTextResult` and `formatCacheAllResult` — truncation at boundary, string passthrough, missing `content` array, non-text content items, and cache-dir appending.
 
-**Why:** These files were generated from the Pi extension template and add noise for consumers and contributors. The template-checklist itself says to delete them after setup.
-
-**Acceptance criteria:**
-- Four template docs are deleted
-- `package.json` `files` reflects remaining docs
-- `npm run pack:check` passes
-- No broken doc references remain in README
-
-### Seed 2: Update docs/examples.md for actual verse-docs (~45 min)
-
-**What:** Rewrite `docs/examples.md` to showcase the real verse-docs tools and commands instead of template placeholders (`hello.ts`, `template-info`, `example-skill`). Include examples for `verse_docs_search_api`, `verse_docs_list_chapters`, and the human commands.
-
-**Why:** The current examples.md is pure template boilerplate — it references files and tools that don't exist in this project.
-
-**Acceptance criteria:**
-- `docs/examples.md` references only existing verse-docs tools/commands
-- At least 3 realistic Verse/UEFN query examples included
-- README links section (if any) still points to valid docs
-
-### Seed 3: Add formatter unit tests (~45 min)
-
-**What:** Add `tests/formatters.test.mjs` covering `formatMcpTextResult` and `formatCacheAllResult` — test truncation at boundary, string input, missing `content` array, non-text content items, and `formatCacheAllResult` cache-dir appending.
-
-**Why:** `lib/formatters.ts` handles all output truncation and formatting but has zero direct test coverage. Edge cases (empty results, non-standard MCP responses) could break silently.
+**Why:** `lib/formatters.ts` handles all tool output truncation but has zero direct test coverage. Edge cases (empty MCP payloads, non-standard responses) could break silently and affect every tool.
 
 **Acceptance criteria:**
 - `tests/formatters.test.mjs` covers truncation, string passthrough, missing content, non-text items
 - `npm test` passes with new tests
 - No `verse-mcp` runtime dependency in tests (pure unit tests)
 
-### Seed 4: Add mock-based verse_docs_status test (~60 min)
+### Seed 2: Add mock-based status formatting tests (~60 min)
 
-**What:** Add a test to `tests/verse-docs.test.mjs` (or a new `tests/verse-docs-status.test.mjs`) that mocks `resolveVerseMcpCommand` and the MCP client to verify the `callVerseDocsTool` execution path for `status` returns correctly formatted output. Use the existing `resolveCommand` and `request` injection points in `VerseDocsCallOptions`.
+**What:** Add `tests/status.test.mjs` that mocks `resolveVerseMcpCommand`, `probePythonRuntime`, and MCP ping to verify `inspectVerseDocsStatus` and `formatVerseDocsStatus` output for ready, setup-needed, and ping-failure cases.
 
-**Why:** The status tool is the first thing users run. End-to-end testing of the call path (resolve → request → format) catches integration regressions without requiring a real `verse-mcp` install.
+**Why:** `verse_docs_status` is the first tool users run. The status formatter drives install hints and readiness messaging; regressions here block all downstream lookup work.
 
 **Acceptance criteria:**
-- Mocked resolve and request verify full call chain
-- Test covers successful status and error (spawn_failed) cases
+- Mocked resolve/probe verify ready and setup-needed summaries
+- Ping success and failure paths covered
 - `npm test` passes
 
-### Seed 5: Add troubleshooting section to docs (~45 min)
+### Seed 3: Add troubleshooting section to README (~45 min)
 
-**What:** Add a troubleshooting section to README or a new `docs/usage.md` covering: Python not found, `uvx` not found, `verse-mcp` install failures, cache permission issues, and MCP timeout recovery.
+**What:** Add a **Troubleshooting** section to README covering: Python not found, `uvx` not found, `verse-mcp` install failures, cache permission issues, and MCP timeout recovery (with pointer to `verse_docs_cache_all`).
 
-**Why:** Users hit setup issues before getting value from the tools. Actionable troubleshooting reduces friction and support overhead.
+**Why:** Users hit setup issues before getting value from search tools. Actionable troubleshooting reduces friction and repeated support questions.
 
 **Acceptance criteria:**
 - Covers at least 4 common failure scenarios
 - Each scenario has a clear resolution step
-- Linked from README
+- Linked from the Recommended workflow section
 
-### Seed 6: Evaluate and add a lint step to CI (~45 min)
+### Seed 4: Evaluate and add a lint step to CI (~45 min)
 
 **What:** Evaluate `biome` or `eslint` for the codebase. Add the chosen linter as a devDependency, configure it for the existing TypeScript strict setup, add a `lint` script, and wire it into the CI workflow.
 
-**Why:** No automated style or correctness checking exists beyond `tsc --noEmit`. A linter catches issues that the type checker doesn't (unused imports, inconsistent formatting, etc.).
+**Why:** No automated style or correctness checking exists beyond `tsc --noEmit`. A linter catches issues the type checker does not (unused imports, inconsistent formatting, etc.).
 
 **Acceptance criteria:**
 - Linter runs on `lib/` and `extensions/` with zero new warnings on current code
@@ -115,11 +78,32 @@ The repository still carries three template bootstrap docs that were marked for 
 - CI workflow updated to run lint
 - `npm run ci` includes lint step
 
+### Seed 5: Archive stale auto-release investigation doc (~30 min)
+
+**What:** Move `docs/auto-release-2026-07-04-investigation.md` to a dated archive note in CHANGELOG or delete it after confirming the auto-release workflow fix (#30) is stable. Ensure no README or doc links reference the file.
+
+**Why:** The investigation doc describes a resolved 2026-07-04 failure (package was 0.3.2 at time of writing). Keeping it in `docs/` adds noise for seed planners and contributors.
+
+**Acceptance criteria:**
+- Investigation doc removed or clearly archived with a one-line CHANGELOG note
+- No broken doc references
+- `npm run pack:check` passes
+
+---
+
+## Recently completed (no longer seed candidates)
+
+These roadmap items shipped and should not be re-seeded:
+
+- **Template bootstrap doc removal** — `docs/github-template.md`, `docs/repository-settings.md`, `docs/typescript.md`, and `docs/template-checklist.md` removed (DOT-1238, #27).
+- **docs/examples.md refresh** — rewritten for real verse-docs tools/commands (DOT-1549, #36).
+- **Auto-release reliability fix** — workflow made reliable (#30).
+
 ---
 
 ## Areas for future consideration (post-v0.5.0)
 
-These are not yet scoped into seeds but are on the radar for future planning:
+These are not yet scoped into seeds but are on the radar:
 
 - **Upstream verse-mcp version tracking:** Pin or document compatible upstream versions; auto-check for new releases
 - **Result caching layer:** Local in-process cache to avoid redundant MCP spawns for repeated identical queries within a session
