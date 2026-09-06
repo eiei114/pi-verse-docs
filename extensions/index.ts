@@ -5,41 +5,59 @@ import { formatVerseDocsStatus, inspectVerseDocsStatus, notifyVerseDocsStatus } 
 import { callVerseDocsTool, promptForQuery } from "../lib/verse-docs.ts";
 
 const statusParameters = Type.Object({
-  ping: Type.Optional(Type.Boolean({ description: "If true, run a lightweight tools/list MCP ping after locating verse-mcp." })),
+  ping: Type.Optional(
+    Type.Boolean({ description: "If true, run a lightweight tools/list MCP ping after locating verse-mcp." }),
+  ),
   verbose: Type.Optional(Type.Boolean({ description: "Include all checked candidate paths." })),
-  timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for an optional MCP ping. Default: 10000." })),
+  timeoutMs: Type.Optional(
+    Type.Number({ description: "Maximum milliseconds to wait for an optional MCP ping. Default: 10000." }),
+  ),
 });
 
 const searchParameters = Type.Object({
   query: Type.String({ description: "Search query for Verse language docs." }),
-  maxChars: Type.Optional(Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` })),
+  maxChars: Type.Optional(
+    Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` }),
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for verse-mcp. Default: 30000." })),
 });
 
 const searchApiParameters = Type.Object({
   query: Type.String({ description: "Search query for Verse / UEFN API digest entries." }),
-  maxChars: Type.Optional(Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` })),
+  maxChars: Type.Optional(
+    Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` }),
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for verse-mcp. Default: 30000." })),
 });
 
 const getChapterParameters = Type.Object({
-  chapterName: Type.String({ description: "Verse chapter name or slug, e.g. failure, concurrency, classes-interfaces." }),
-  maxChars: Type.Optional(Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` })),
+  chapterName: Type.String({
+    description: "Verse chapter name or slug, e.g. failure, concurrency, classes-interfaces.",
+  }),
+  maxChars: Type.Optional(
+    Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` }),
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for verse-mcp. Default: 30000." })),
 });
 
 const getApiModuleParameters = Type.Object({
   moduleName: Type.String({ description: "Verse API module or class name, e.g. creative_device or fort_character." }),
-  maxChars: Type.Optional(Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` })),
+  maxChars: Type.Optional(
+    Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` }),
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for verse-mcp. Default: 30000." })),
 });
 
 const cacheAllParameters = Type.Object({
-  timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for cache warm-up. Default: 120000." })),
+  timeoutMs: Type.Optional(
+    Type.Number({ description: "Maximum milliseconds to wait for cache warm-up. Default: 120000." }),
+  ),
 });
 
 const listParameters = Type.Object({
-  maxChars: Type.Optional(Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` })),
+  maxChars: Type.Optional(
+    Type.Number({ description: `Maximum output characters. Default: ${VERSE_DOCS_DEFAULT_MAX_CHARS}.` }),
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Maximum milliseconds to wait for verse-mcp. Default: 30000." })),
 });
 
@@ -141,10 +159,9 @@ export default function (pi: ExtensionAPI) {
     name: "verse_docs_status",
     label: "Verse Docs Status",
     description: "Report Python, verse-mcp, and cache readiness for pi-verse-docs. Optional MCP ping supported.",
-    promptSnippet: "verse_docs_status: inspect Python, verse-mcp, and cache readiness before relying on Verse docs tools",
-    promptGuidelines: [
-      "Use this tool to verify bootstrap state before relying on Verse docs tools.",
-    ],
+    promptSnippet:
+      "verse_docs_status: inspect Python, verse-mcp, and cache readiness before relying on Verse docs tools",
+    promptGuidelines: ["Use this tool to verify bootstrap state before relying on Verse docs tools."],
     parameters: statusParameters,
     async execute(_toolCallId, params, signal) {
       const summary = await inspectVerseDocsStatus({
@@ -172,7 +189,11 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: searchParameters,
     async execute(_toolCallId, params, signal) {
-      const result = await runVerseTool("search_verse_docs", { query: params.query }, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      const result = await runVerseTool(
+        "search_verse_docs",
+        { query: params.query },
+        { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal },
+      );
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
@@ -184,14 +205,19 @@ export default function (pi: ExtensionAPI) {
     name: "verse_docs_search_api",
     label: "Verse Docs Search API",
     description: `Search the Verse / UEFN API digest via verse-mcp. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
-    promptSnippet: "verse_docs_search_api: search the Verse / UEFN API digest for devices, classes, methods, and modules",
+    promptSnippet:
+      "verse_docs_search_api: search the Verse / UEFN API digest for devices, classes, methods, and modules",
     promptGuidelines: [
       "Use verse_docs_search_api before writing non-trivial UEFN Verse code so class names and method signatures are verified.",
       "Do not guess device or API names when verse_docs_search_api can confirm them.",
     ],
     parameters: searchApiParameters,
     async execute(_toolCallId, params, signal) {
-      const result = await runVerseTool("search_verse_api", { query: params.query }, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      const result = await runVerseTool(
+        "search_verse_api",
+        { query: params.query },
+        { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal },
+      );
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
@@ -203,13 +229,18 @@ export default function (pi: ExtensionAPI) {
     name: "verse_docs_get_chapter",
     label: "Verse Docs Get Chapter",
     description: `Get a full Verse language chapter by name or slug. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
-    promptSnippet: "verse_docs_get_chapter: fetch a full Verse language chapter by name when search results need deeper reading",
+    promptSnippet:
+      "verse_docs_get_chapter: fetch a full Verse language chapter by name when search results need deeper reading",
     promptGuidelines: [
       "Use verse_docs_get_chapter after verse_docs_search when you need the full chapter context for a specific concept.",
     ],
     parameters: getChapterParameters,
     async execute(_toolCallId, params, signal) {
-      const result = await runVerseTool("get_chapter", { chapter_name: params.chapterName }, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      const result = await runVerseTool(
+        "get_chapter",
+        { chapter_name: params.chapterName },
+        { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal },
+      );
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
@@ -221,13 +252,18 @@ export default function (pi: ExtensionAPI) {
     name: "verse_docs_get_api_module",
     label: "Verse Docs Get API Module",
     description: `Get a full Verse / UEFN API module or class section. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
-    promptSnippet: "verse_docs_get_api_module: fetch the full Verse / UEFN API section for a module or class after search results",
+    promptSnippet:
+      "verse_docs_get_api_module: fetch the full Verse / UEFN API section for a module or class after search results",
     promptGuidelines: [
       "Use verse_docs_get_api_module after verse_docs_search_api when you need the full digest section for one module or class.",
     ],
     parameters: getApiModuleParameters,
     async execute(_toolCallId, params, signal) {
-      const result = await runVerseTool("get_verse_api_module", { module_name: params.moduleName }, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      const result = await runVerseTool(
+        "get_verse_api_module",
+        { module_name: params.moduleName },
+        { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal },
+      );
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
@@ -239,13 +275,18 @@ export default function (pi: ExtensionAPI) {
     name: "verse_docs_list_chapters",
     label: "Verse Docs List Chapters",
     description: `List Verse language book chapters via verse-mcp. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
-    promptSnippet: "verse_docs_list_chapters: enumerate valid Verse language chapter names before calling verse_docs_get_chapter",
+    promptSnippet:
+      "verse_docs_list_chapters: enumerate valid Verse language chapter names before calling verse_docs_get_chapter",
     promptGuidelines: [
       "Use verse_docs_list_chapters when you need valid chapter names or slugs before calling verse_docs_get_chapter.",
     ],
     parameters: listParameters,
     async execute(_toolCallId, params, signal) {
-      const result = await runVerseTool("list_chapters", {}, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      const result = await runVerseTool(
+        "list_chapters",
+        {},
+        { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal },
+      );
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
@@ -257,13 +298,18 @@ export default function (pi: ExtensionAPI) {
     name: "verse_docs_list_api_modules",
     label: "Verse Docs List API Modules",
     description: `List Verse / UEFN API digest modules via verse-mcp. Output is truncated to maxChars (default ${VERSE_DOCS_DEFAULT_MAX_CHARS}).`,
-    promptSnippet: "verse_docs_list_api_modules: enumerate valid API module or class names before calling verse_docs_get_api_module",
+    promptSnippet:
+      "verse_docs_list_api_modules: enumerate valid API module or class names before calling verse_docs_get_api_module",
     promptGuidelines: [
       "Use verse_docs_list_api_modules when you need valid module or class names before calling verse_docs_get_api_module.",
     ],
     parameters: listParameters,
     async execute(_toolCallId, params, signal) {
-      const result = await runVerseTool("list_verse_api_modules", {}, { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal });
+      const result = await runVerseTool(
+        "list_verse_api_modules",
+        {},
+        { timeoutMs: params.timeoutMs ?? 30_000, maxChars: params.maxChars, signal },
+      );
       return {
         content: [{ type: "text", text: result.text }],
         details: result.details,
@@ -274,7 +320,8 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "verse_docs_cache_all",
     label: "Verse Docs Cache All",
-    description: "Pre-download Verse chapters through verse-mcp for faster future searches. Network required on first warm-up.",
+    description:
+      "Pre-download Verse chapters through verse-mcp for faster future searches. Network required on first warm-up.",
     promptSnippet: "verse_docs_cache_all: warm the local Verse docs cache for faster future searches",
     promptGuidelines: [
       "Use verse_docs_cache_all early in a Verse session when repeated docs searches are likely.",

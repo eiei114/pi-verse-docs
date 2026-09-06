@@ -1,15 +1,30 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { formatCacheAllResult, formatMcpTextResult, VERSE_DOCS_DEFAULT_MAX_CHARS } from "./formatters.ts";
-import { inspectVerseDocsStatus, formatVerseDocsStatus } from "./status.ts";
-import { McpClientError, runOneShotMcpRequest, type OneShotMcpOptions, type OneShotMcpResult } from "./stdio-mcp-client.ts";
-import { getVerseMcpCacheDir, resolveVerseMcpCommand, type VerseMcpCommand, type VerseMcpStatus } from "./verse-mcp-locator.ts";
+import { formatVerseDocsStatus, inspectVerseDocsStatus } from "./status.ts";
+import {
+  McpClientError,
+  type OneShotMcpOptions,
+  type OneShotMcpResult,
+  runOneShotMcpRequest,
+} from "./stdio-mcp-client.ts";
+import {
+  getVerseMcpCacheDir,
+  resolveVerseMcpCommand,
+  type VerseMcpCommand,
+  type VerseMcpStatus,
+} from "./verse-mcp-locator.ts";
 
 export interface VerseDocsCallOptions {
   timeoutMs?: number;
   maxChars?: number;
   signal?: AbortSignal;
   resolveCommand?: () => Promise<VerseMcpStatus>;
-  request?: (command: VerseMcpCommand, method: string, params?: unknown, options?: OneShotMcpOptions) => Promise<OneShotMcpResult>;
+  request?: (
+    command: VerseMcpCommand,
+    method: string,
+    params?: unknown,
+    options?: OneShotMcpOptions,
+  ) => Promise<OneShotMcpResult>;
 }
 
 export interface VerseDocsToolResult {
@@ -38,7 +53,9 @@ async function requireVerseMcpCommand(resolveCommand?: () => Promise<VerseMcpSta
 function actionableMcpError(upstreamTool: string, error: unknown): Error {
   if (error instanceof McpClientError) {
     if (error.code === "timeout") {
-      return new Error(`verse-mcp timed out while running ${upstreamTool}. Retry, increase timeoutMs, or warm the cache with verse_docs_cache_all.`);
+      return new Error(
+        `verse-mcp timed out while running ${upstreamTool}. Retry, increase timeoutMs, or warm the cache with verse_docs_cache_all.`,
+      );
     }
 
     if (error.code === "spawn_failed" || error.code === "process_exited") {
@@ -71,9 +88,10 @@ export async function callVerseDocsTool(
     );
 
     const cacheDir = upstreamTool === "cache_all_chapters" ? getVerseMcpCacheDir() : undefined;
-    const text = upstreamTool === "cache_all_chapters"
-      ? formatCacheAllResult(result.response.result, cacheDir!, options.maxChars ?? VERSE_DOCS_DEFAULT_MAX_CHARS)
-      : formatMcpTextResult(result.response.result, options.maxChars ?? VERSE_DOCS_DEFAULT_MAX_CHARS);
+    const text =
+      cacheDir !== undefined
+        ? formatCacheAllResult(result.response.result, cacheDir, options.maxChars ?? VERSE_DOCS_DEFAULT_MAX_CHARS)
+        : formatMcpTextResult(result.response.result, options.maxChars ?? VERSE_DOCS_DEFAULT_MAX_CHARS);
 
     return {
       text,
@@ -90,7 +108,12 @@ export async function callVerseDocsTool(
   }
 }
 
-export async function promptForQuery(ctx: ExtensionContext, title: string, placeholder: string, args: string): Promise<string | undefined> {
+export async function promptForQuery(
+  ctx: ExtensionContext,
+  title: string,
+  placeholder: string,
+  args: string,
+): Promise<string | undefined> {
   const trimmedArgs = args.trim();
   if (trimmedArgs) return trimmedArgs;
 

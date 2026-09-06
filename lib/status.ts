@@ -1,6 +1,6 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { probePythonRuntime, type PythonStatus } from "./python-runtime.ts";
-import { runOneShotMcpRequest, type McpClientError } from "./stdio-mcp-client.ts";
+import { type PythonStatus, probePythonRuntime } from "./python-runtime.ts";
+import { type McpClientError, runOneShotMcpRequest } from "./stdio-mcp-client.ts";
 import { getVerseMcpCacheDir, resolveVerseMcpCommand, type VerseMcpStatus } from "./verse-mcp-locator.ts";
 
 export interface VerseDocsStatusOptions {
@@ -125,7 +125,11 @@ export function formatVerseDocsStatus(summary: VerseDocsStatusSummary, options: 
   lines.push(`cache_dir: ${summary.cacheDir}`);
 
   if (summary.ping) {
-    lines.push(summary.ping.ok ? `mcp_ping: ok${summary.ping.toolCount !== undefined ? ` (${summary.ping.toolCount} tools)` : ""}` : `mcp_ping: failed — ${summary.ping.error?.message ?? "unknown error"}`);
+    lines.push(
+      summary.ping.ok
+        ? `mcp_ping: ok${summary.ping.toolCount !== undefined ? ` (${summary.ping.toolCount} tools)` : ""}`
+        : `mcp_ping: failed — ${summary.ping.error?.message ?? "unknown error"}`,
+    );
   }
 
   if (summary.installHints.length > 0) {
@@ -152,7 +156,10 @@ export function statusNotificationLevel(summary: VerseDocsStatusSummary): "info"
   return summary.ready ? "info" : "warning";
 }
 
-export async function notifyVerseDocsStatus(ctx: ExtensionContext, options: VerseDocsStatusOptions = {}): Promise<VerseDocsStatusSummary> {
+export async function notifyVerseDocsStatus(
+  ctx: ExtensionContext,
+  options: VerseDocsStatusOptions = {},
+): Promise<VerseDocsStatusSummary> {
   const summary = await inspectVerseDocsStatus({ ...options, signal: options.signal ?? ctx.signal });
   ctx.ui.notify(formatVerseDocsStatus(summary, { verbose: options.verbose }), statusNotificationLevel(summary));
   return summary;

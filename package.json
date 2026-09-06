@@ -36,8 +36,9 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "biome check lib extensions",
     "test": "node --test tests/*.test.mjs",
-    "ci": "npm run typecheck && npm test && npm run pack:check",
+    "ci": "npm run typecheck && npm run lint && npm test && npm run pack:check",
     "pack:check": "npm pack --dry-run"
   },
   "pi": {
@@ -58,11 +59,12 @@
     "typebox": "*"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
     "@earendil-works/pi-ai": "latest",
     "@earendil-works/pi-coding-agent": "latest",
     "@earendil-works/pi-tui": "latest",
-    "typebox": "latest",
     "@types/node": "^26.1.0",
+    "typebox": "latest",
     "typescript": "^7.0.2"
   }
 }

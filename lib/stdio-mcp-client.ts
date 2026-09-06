@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { basename } from "node:path";
 import type { VerseMcpCommand } from "./verse-mcp-locator.ts";
 
@@ -225,7 +225,10 @@ export async function runOneShotMcpRequests(
   if (options.signal?.aborted) abort();
   options.signal?.addEventListener("abort", abort, { once: true });
 
-  const sendRequest = async <R = unknown>(requestMethod: string, requestParams?: unknown): Promise<JsonRpcSuccess<R>> => {
+  const sendRequest = async <R = unknown>(
+    requestMethod: string,
+    requestParams?: unknown,
+  ): Promise<JsonRpcSuccess<R>> => {
     const id = nextId++;
 
     const responsePromise = new Promise<JsonRpcResponse<R>>((resolve, reject) => {
