@@ -43,7 +43,9 @@ function getPythonCandidateSpecs(platform: NodeJS.Platform): PythonCandidateSpec
   return common;
 }
 
-function parsePythonVersion(versionText: string): { major: number; minor: number; patch: number; raw: string } | undefined {
+function parsePythonVersion(
+  versionText: string,
+): { major: number; minor: number; patch: number; raw: string } | undefined {
   const match = versionText.match(/Python\s+(\d+)\.(\d+)\.(\d+)/i);
   if (!match) return undefined;
 
@@ -110,7 +112,8 @@ export async function probePythonRuntime(options: ProbePythonOptions = {}): Prom
         };
       }
 
-      const supported = version.major > MIN_PYTHON_MAJOR || (version.major === MIN_PYTHON_MAJOR && version.minor >= MIN_PYTHON_MINOR);
+      const supported =
+        version.major > MIN_PYTHON_MAJOR || (version.major === MIN_PYTHON_MAJOR && version.minor >= MIN_PYTHON_MINOR);
       return {
         supported,
         platform,
