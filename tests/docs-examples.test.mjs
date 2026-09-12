@@ -33,6 +33,9 @@ test("docs/examples.md documents current pi-verse-docs resources", () => {
   assert.match(examples, /verse_docs_list_chapters/);
   assert.match(examples, /\/verse-docs:status/);
   assert.match(examples, /\/verse-docs:search-api/);
+  assert.match(examples, /\/verse-docs:list-chapters/);
+  assert.match(examples, /\/verse-docs:list-api-modules/);
+  assert.match(examples, /pi install npm:pi-verse-docs/);
 });
 
 test("docs/examples.md includes at least three realistic workflow examples", () => {

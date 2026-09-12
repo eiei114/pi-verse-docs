@@ -142,6 +142,7 @@ For vulnerability reporting, see [`SECURITY.md`](SECURITY.md).
 
 ## Links
 
+- Examples: [docs/examples.md](docs/examples.md)
 - npm: https://www.npmjs.com/package/pi-verse-docs
 - GitHub: https://github.com/eiei114/pi-verse-docs
 - Upstream MCP: https://github.com/BurgersJackson/verse-mcp

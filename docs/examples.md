@@ -4,6 +4,14 @@ This document shows realistic `pi-verse-docs` workflows for Verse language and U
 
 ## Quick start
 
+From npm (recommended):
+
+```bash
+pi install npm:pi-verse-docs
+```
+
+From GitHub:
+
 ```bash
 pi install git:github.com/eiei114/pi-verse-docs
 ```
@@ -50,13 +58,14 @@ verse_docs_list_chapters
 verse_docs_get_chapter chapterName="failure"
 ```
 
-**Human command alternative:**
+**Human command alternatives:**
 
 ```txt
 /verse-docs:search
+/verse-docs:list-chapters
 ```
 
-Enter `decides` when prompted.
+Enter `decides` when prompted for search.
 
 ## Example 3: Confirm UEFN API names before device code
 
@@ -75,10 +84,11 @@ verse_docs_list_api_modules
 verse_docs_get_api_module moduleName="creative_device"
 ```
 
-**Human command alternative:**
+**Human command alternatives:**
 
 ```txt
 /verse-docs:search-api
+/verse-docs:list-api-modules
 ```
 
 ## Example 4: Warm cache for repeated lookups
