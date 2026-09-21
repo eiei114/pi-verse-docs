@@ -18,8 +18,37 @@ const DOC_GLOBS = [
 
 const MARKDOWN_LINK = /(?<!!)\[[^\]]+\]\(([^)]+)\)/g;
 
+const FENCE_OPENER = /^ {0,3}(`{3,}|~{3,})/;
+const FENCE_CLOSER = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
+
 function stripFencedCodeBlocks(markdown) {
-  return markdown.replace(/^```[\s\S]*?^```/gm, "");
+  const kept = [];
+  let openFence = null;
+
+  for (const line of markdown.split(/\r?\n/)) {
+    if (openFence === null) {
+      const opener = line.match(FENCE_OPENER);
+      if (opener) {
+        // Backtick and tilde fences are separate families; remember the run
+        // length so a shorter run stays ordinary content.
+        openFence = { marker: opener[1][0], length: opener[1].length };
+        continue;
+      }
+      kept.push(line);
+      continue;
+    }
+
+    // Only the same marker repeated at least as many times as the opener, with
+    // nothing but trailing whitespace after it, closes the fence. Indentation
+    // is capped at three spaces so four-space indented code blocks are left for
+    // the link scan to see.
+    const closer = line.match(FENCE_CLOSER);
+    if (closer && closer[1][0] === openFence.marker && closer[1].length >= openFence.length) {
+      openFence = null;
+    }
+  }
+
+  return kept.join("\n");
 }
 
 function isExternalTarget(target) {
@@ -123,6 +152,24 @@ test("internal markdown links resolve to existing files", async () => {
     [],
     brokenLinks.map(({ file, target, reason }) => `${file}: [${target}] (${reason})`).join("\n"),
   );
+});
+
+test("stripFencedCodeBlocks removes only real fenced code blocks", async () => {
+  const fixture = await readFile(new URL("fixtures/fenced-code-sample.md", import.meta.url), "utf8");
+  const prose = stripFencedCodeBlocks(fixture);
+
+  assert.ok(
+    prose.includes("indented-code-missing.md"),
+    "four-space indented code blocks must be preserved",
+  );
+
+  for (const stripped of [
+    "tilde-fenced-missing.md",
+    "backtick-fenced-missing.md",
+    "indented-fence-missing.md",
+  ]) {
+    assert.ok(!prose.includes(stripped), `${stripped} must be stripped together with its fence`);
+  }
 });
 
 test("README links to published documentation entry points", async () => {
