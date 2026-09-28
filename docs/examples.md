@@ -125,14 +125,9 @@ The `verse-dev` skill encodes the same flow as the examples above:
 5. `verse_docs_list_chapters` / `verse_docs_list_api_modules` for valid names
 6. `verse_docs_get_chapter` / `verse_docs_get_api_module` for full reads
 
-## Optional template placeholders
+## Verse-specific package resource
 
-These files remain from the Pi package template and are not wired into `package.json` `pi` resources:
-
-- `prompts/example.md`
-- `themes/example-theme.json`
-
-Remove them in a fork if you do not need prompt or theme samples.
+The published package includes the [`verse-dev` skill](../skills/verse-dev/SKILL.md), which guides Pi agents through the lookup workflow above. Use it when working on Verse or UEFN code.
 
 ## Related docs
 
