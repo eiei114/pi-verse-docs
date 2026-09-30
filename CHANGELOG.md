@@ -10,6 +10,12 @@
 
 - Removed the resolved 2026-07-04 auto-release investigation note; the workflow fix is now in place.
 
+## [0.3.7] - 2026-09-30
+
+### Changed
+
+- Update `@earendil-works/pi-*` dependencies to `0.99.1`.
+
 ## [0.3.5] - 2026-08-22
 
 ### Changed
