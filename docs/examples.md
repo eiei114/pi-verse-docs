@@ -16,9 +16,11 @@ From GitHub:
 pi install git:github.com/eiei114/pi-verse-docs
 ```
 
-Local development from a clone:
+Local development from a fresh clone:
 
 ```bash
+git clone https://github.com/eiei114/pi-verse-docs.git
+cd pi-verse-docs
 npm install
 pi -e .
 ```
