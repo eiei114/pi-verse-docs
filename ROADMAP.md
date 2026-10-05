@@ -2,17 +2,20 @@
 
 ## Current release status
 
-**Latest release:** v0.3.5 (2026-08-22) — npm published; includes dependency maintenance batch and refreshed `docs/examples.md`.
+**Last refreshed:** 2026-10-06.
 
-**In development:** v0.4.0 — reliability, test coverage, and contributor-facing docs.
+**Latest release:** v0.3.7 (2026-09-30) — npm published; updates the Pi SDK dependencies to 0.99.1.
+
+**In development:** v0.4.0 — lookup reliability, test coverage, and contributor-facing docs.
 
 **Shipped (recent):**
 
 | Version | Date | Highlights |
 |---------|------|-----------|
+| 0.3.7 | 2026-09-30 | Pi SDK dependency update to 0.99.1 |
+| 0.3.6 | 2026-09-27 | Periodic patch release after the publish gap |
 | 0.3.5 | 2026-08-22 | Managed OSS dependency batch; examples doc refresh (DOT-1549) |
 | 0.3.3 | 2026-07-20 | Sponsor/funding links; template bootstrap doc removal (DOT-1238) |
-| 0.3.1 | 2026-06-05 | Changelog housekeeping |
 | 0.3.0 | 2026-06-05 | `verse_docs_list_chapters` / `verse_docs_list_api_modules` tools |
 | 0.2.0 | 2026-06-04 | MVP — on-demand MCP client, 6 core tools, verse-dev skill |
 
@@ -24,7 +27,7 @@ Focus areas for the next one to two releases:
 
 1. **Lookup reliability** — tighten error messages, timeout guidance, and cache warm-up docs so first-time users recover from setup failures without support.
 2. **Test coverage gaps** — add direct unit tests for formatters and status formatting; keep integration tests mock-based (no live `verse-mcp` in CI).
-3. **Contributor hygiene** — add a lint step to CI and archive one-off investigation docs that are no longer actionable.
+3. **Contributor hygiene** — keep the lightweight lint and documentation checks green; archive one-off investigation docs that are no longer actionable.
 4. **Search/cache follow-ups** — document `maxChars` / timeout tuning and evaluate whether repeated identical queries within a session need a lightweight cache (future seed, not v0.4.0 blocker).
 
 ---
@@ -55,39 +58,28 @@ Focus areas for the next one to two releases:
 - Ping success and failure paths covered
 - `npm test` passes
 
-### Seed 3: Add troubleshooting section to README (~45 min)
+### Seed 3: Add prerequisite troubleshooting to README (~45 min)
 
-**What:** Add a **Troubleshooting** section to README covering: Python not found, `uvx` not found, `verse-mcp` install failures, cache permission issues, and MCP timeout recovery (with pointer to `verse_docs_cache_all`).
+**What:** Add a **Troubleshooting** section to README covering Python not found, `uvx` not found, and `verse-mcp` installation failures.
 
-**Why:** Users hit setup issues before getting value from search tools. Actionable troubleshooting reduces friction and repeated support questions.
+**Why:** Users hit setup issues before getting value from search tools. Actionable prerequisite recovery steps reduce repeated support questions.
 
 **Acceptance criteria:**
-- Covers at least 4 common failure scenarios
+- Covers the three prerequisite failure scenarios
 - Each scenario has a clear resolution step
 - Linked from the Recommended workflow section
 
-### Seed 4: Evaluate and add a lint step to CI (~45 min)
+### Seed 4: Document search and cache tuning (~45 min)
 
-**What:** Evaluate `biome` or `eslint` for the codebase. Add the chosen linter as a devDependency, configure it for the existing TypeScript strict setup, add a `lint` script, and wire it into the CI workflow.
+**What:** Add a README troubleshooting section covering `maxChars`, timeout recovery, cache warm-up, and cache permission failures; link it from the recommended workflow.
 
-**Why:** No automated style or correctness checking exists beyond `tsc --noEmit`. A linter catches issues the type checker does not (unused imports, inconsistent formatting, etc.).
-
-**Acceptance criteria:**
-- Linter runs on `lib/` and `extensions/` with zero new warnings on current code
-- `npm run lint` added as a script
-- CI workflow updated to run lint
-- `npm run ci` includes lint step
-
-### Seed 5: Archive stale auto-release investigation doc (~30 min)
-
-**What:** Move `docs/auto-release-2026-07-04-investigation.md` to a dated archive note in CHANGELOG or delete it after confirming the auto-release workflow fix (#30) is stable. Ensure no README or doc links reference the file.
-
-**Why:** The investigation doc describes a resolved 2026-07-04 failure (package was 0.3.2 at time of writing). Keeping it in `docs/` adds noise for seed planners and contributors.
+**Why:** First-time lookup failures are the main remaining support path, and the existing notes do not explain how to recover from slow or partial upstream responses.
 
 **Acceptance criteria:**
-- Investigation doc removed or clearly archived with a one-line CHANGELOG note
-- No broken doc references
-- `npm run pack:check` passes
+- Documents `maxChars` / timeout tuning and cache warm-up
+- Includes actionable recovery steps for cache permission and MCP timeout failures
+- Linked from the recommended workflow
+- Documentation link tests pass
 
 ---
 
@@ -98,6 +90,9 @@ These roadmap items shipped and should not be re-seeded:
 - **Template bootstrap doc removal** — `docs/github-template.md`, `docs/repository-settings.md`, `docs/typescript.md`, and `docs/template-checklist.md` removed (DOT-1238, #27).
 - **docs/examples.md refresh** — rewritten for real verse-docs tools/commands (DOT-1549, #36).
 - **Auto-release reliability fix** — workflow made reliable (#30).
+- **Biome lint and CI integration** — lint runs through `npm run ci` (DOT-1754, #40).
+- **Markdown link check** — documentation links are checked in CI (DOT-1859, #43).
+- **Auto-release investigation archive** — stale investigation note removed (DOT-1960, #45).
 
 ---
 
