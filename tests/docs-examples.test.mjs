@@ -36,8 +36,16 @@ test("docs/examples.md documents current pi-verse-docs resources", () => {
   assert.match(examples, /\/verse-docs:list-chapters/);
   assert.match(examples, /\/verse-docs:list-api-modules/);
   assert.match(examples, /pi install npm:pi-verse-docs/);
-  assert.match(examples, /git clone https:\/\/github\.com\/eiei114\/pi-verse-docs\.git/);
-  assert.match(examples, /cd pi-verse-docs/);
+
+  const localSetup = examples.match(
+    /Local development from a fresh clone:\n\n```bash\n([\s\S]*?)```/,
+  );
+  assert.ok(localSetup, "docs/examples.md should include the fresh-clone setup");
+  assert.match(
+    localSetup[1],
+    /git clone https:\/\/github\.com\/eiei114\/pi-verse-docs\.git\ncd pi-verse-docs\nnpm install\npi -e \./,
+    "fresh-clone commands should be documented in execution order",
+  );
 });
 
 test("docs/examples.md includes at least three realistic workflow examples", () => {
