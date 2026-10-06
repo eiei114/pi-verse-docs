@@ -37,9 +37,11 @@ test("docs/examples.md documents current pi-verse-docs resources", () => {
   assert.match(examples, /\/verse-docs:list-api-modules/);
   assert.match(examples, /pi install npm:pi-verse-docs/);
 
-  const localSetup = examples.match(
-    /Local development from a fresh clone:\n\n```bash\n([\s\S]*?)```/,
-  );
+  const localSetup = examples
+    .replace(/\r\n/g, "\n")
+    .match(
+      /Local development from a fresh clone:\n\n```bash\n([\s\S]*?)```/,
+    );
   assert.ok(localSetup, "docs/examples.md should include the fresh-clone setup");
   assert.match(
     localSetup[1],
