@@ -21,7 +21,7 @@ npm version patch
 git push
 ```
 
-On `main`, `.github/workflows/auto-release.yml` checks `package.json` version. If `v<version>` does not exist yet, it creates the tag, creates the GitHub Release, then explicitly dispatches `.github/workflows/publish.yml` for that tag.
+Merging a version change does not release or publish the package. After a maintainer has approved the release, manually run `.github/workflows/auto-release.yml` on `main`; it creates the tag and GitHub Release, then explicitly dispatches `.github/workflows/publish.yml` for that tag.
 
 The `v*.*.*` tag also triggers `.github/workflows/publish.yml`, which runs CI and publishes to npm when tags are pushed manually.
 Publishing also runs when a GitHub Release is published, and can be run manually from GitHub Actions with `workflow_dispatch`.
