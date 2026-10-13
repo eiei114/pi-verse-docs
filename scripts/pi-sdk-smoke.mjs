@@ -10,9 +10,10 @@ import {
   UNHANDLED_ERROR_PATTERN,
   VERIFICATION_CONTRACT,
 } from "./pi-sdk-smoke-contract.mjs";
+import { redactRepositoryRootPaths, serializeRedactedReport, smokeReportPath } from "./pi-sdk-smoke-report.mjs";
 
 const root = resolve(import.meta.dirname, "..");
-const reportPath = resolve(root, "docs/verification/pi-sdk-smoke.json");
+const reportPath = smokeReportPath(root, process.argv.includes("--update-curated-report"));
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const manifest = readJson(resolve(root, "package.json"));
 const expectedVersions = Object.fromEntries(SDK_NAMES.map((name) => [name, "1.1.0"]));
@@ -124,7 +125,7 @@ function runPi(name, query) {
         command: "npm run smoke:pi",
         exit_code: exitCode ?? 1,
         passed: exitCode === 0 && !signal && !runError && !hasUnhandledError && !hasLoadError && assertions.every((item) => item.passed),
-        evidence: fullOutput.slice(-6000) || "No output captured",
+        evidence: redactRepositoryRootPaths(fullOutput.slice(-6000) || "No output captured", root),
         assertions,
         hasUnhandledError,
         hasLoadError,
@@ -210,7 +211,7 @@ function runHostShell(shell, args) {
     command: "npm run smoke:pi",
     exit_code,
     passed: exit_code === 0 && !result.error && assertions.every((item) => item.passed),
-    evidence: fullOutput.slice(-6000) || "No output captured",
+    evidence: redactRepositoryRootPaths(fullOutput.slice(-6000) || "No output captured", root),
     assertions,
     hasUnhandledError: false,
     hasLoadError: false,
@@ -247,7 +248,7 @@ try {
     cases: cases.map(({ hasUnhandledError, hasLoadError, ...item }) => item),
   };
   mkdirSync(dirname(reportPath), { recursive: true });
-  writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  writeFileSync(reportPath, `${serializeRedactedReport(report, root)}\n`, "utf8");
   console.log(JSON.stringify({ verification_contract: VERIFICATION_CONTRACT, platform: process.platform,
     cases: cases.map(({ name, passed, exit_code }) => ({ name, passed, exit_code })) }));
   if (cases.some((item) => !item.passed)) process.exitCode = 1;

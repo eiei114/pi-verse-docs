@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { resolve } from "node:path";
 import { behaviorAssertions, parseJsonLines, VERIFICATION_CONTRACT } from "../scripts/pi-sdk-smoke-contract.mjs";
+import { redactRepositoryRootPaths, serializeRedactedReport, smokeReportPath } from "../scripts/pi-sdk-smoke-report.mjs";
 
 const command = { command: "get_commands", success: true, data: { commands: [{ name: "verse-docs:search", source: "extension" }] } };
 const prompt = { type: "response", command: "prompt", success: true, data: { disposition: "handled" } };
@@ -48,4 +50,36 @@ test("native shell assertion matches exactly the pinned version", () => {
   for (const output of ["", "11.1.0", "1.0.0", "1.1.0 with error"]) {
     assert.equal(behaviorAssertions("host_shell", observed([], output))[0].passed, false);
   }
+});
+
+test("smoke reports default to ignored output and only update the curated report explicitly", () => {
+  const root = resolve(String.raw`C:\Users\private\workspace\pi-verse-docs`);
+  assert.equal(smokeReportPath(root), resolve(root, ".tmp/pi-sdk-smoke.json"));
+  assert.equal(smokeReportPath(root, true), resolve(root, "docs/verification/pi-sdk-smoke.json"));
+});
+
+test("smoke evidence redacts native and JSON-escaped repository-root paths", () => {
+  const root = String.raw`C:\Users\private\workspace\pi-verse-docs`;
+  const rawEvidence = `extension ${root}\\extensions\\index.ts`;
+  const escapedEvidence = JSON.stringify({ sourceInfo: { path: `${root}\\skills\\verse-dev\\SKILL.md` } });
+  const report = { evidence: rawEvidence, assertions: [{ observed: escapedEvidence }] };
+
+  const redactedEvidence = redactRepositoryRootPaths(`${rawEvidence}\n${escapedEvidence}`, root);
+  const serialized = serializeRedactedReport(report, root);
+
+  assert.ok(redactedEvidence.includes("<repo-root>"));
+  assert.ok(!redactedEvidence.toLowerCase().includes("c:\\\\users\\\\private"));
+  assert.ok(serialized.includes("<repo-root>"));
+  assert.ok(!serialized.toLowerCase().includes("c:\\\\users\\\\private"));
+  assert.deepEqual(JSON.parse(serialized), {
+    evidence: "extension <repo-root>\\extensions\\index.ts",
+    assertions: [{ observed: '{"sourceInfo":{"path":"<repo-root>\\\\skills\\\\verse-dev\\\\SKILL.md"}}' }],
+  });
+
+  const posixRoot = "/private/runner/work/pi-verse-docs";
+  const posixEvidence = JSON.stringify({ sourceInfo: { path: `${posixRoot}/extensions/index.ts` } });
+  const posixReport = serializeRedactedReport({ evidence: posixEvidence }, posixRoot);
+  assert.deepEqual(JSON.parse(posixReport), {
+    evidence: '{"sourceInfo":{"path":"<repo-root>/extensions/index.ts"}}',
+  });
 });
