@@ -16,7 +16,7 @@ const root = resolve(import.meta.dirname, "..");
 const reportPath = smokeReportPath(root, process.argv.includes("--update-curated-report"));
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const manifest = readJson(resolve(root, "package.json"));
-const expectedVersions = Object.fromEntries(SDK_NAMES.map((name) => [name, "1.1.0"]));
+const expectedVersions = Object.fromEntries(SDK_NAMES.map((name) => [name, "1.2.0"]));
 const sdkVersions = Object.fromEntries(SDK_NAMES.map((name) => [
   name,
   readJson(resolve(root, "node_modules", name, "package.json")).version,
@@ -24,7 +24,7 @@ const sdkVersions = Object.fromEntries(SDK_NAMES.map((name) => [
 
 for (const name of SDK_NAMES) {
   if (manifest.devDependencies?.[name] !== expectedVersions[name] || sdkVersions[name] !== expectedVersions[name]) {
-    throw new Error(`Smoke requires the exact Pi SDK 1.1.0 dev/test pin for ${name}; manifest=${manifest.devDependencies?.[name]}, installed=${sdkVersions[name]}`);
+    throw new Error(`Smoke requires the exact Pi SDK 1.2.0 dev/test pin for ${name}; manifest=${manifest.devDependencies?.[name]}, installed=${sdkVersions[name]}`);
   }
 }
 
@@ -87,7 +87,7 @@ function notification(responses, prefix) {
     typeof row.message === "string" && row.message.includes(prefix));
 }
 
-function runPi(name, query) {
+function runPiProcess(query) {
   return new Promise((resolveRun) => {
     const child = spawn(process.execPath, rpcArgs, { cwd: root, env, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     let stdout = "";
@@ -112,23 +112,12 @@ function runPi(name, query) {
       clearTimeout(deadlineTimer);
       clearTimeout(cleanupTimer);
       const fullOutput = `${stdout}${stderr}${runError ? `\n${runError}` : ""}`;
-      const assertions = behaviorAssertions(name, {
+      resolveRun({
+        exit_code: exitCode ?? 1,
+        signal: signal ?? null,
         responses,
         fullOutput,
-        exit_code: exitCode ?? 1,
-        expectedVersion: sdkVersions["@earendil-works/pi-coding-agent"],
-      });
-      const hasUnhandledError = UNHANDLED_ERROR_PATTERN.test(fullOutput);
-      const hasLoadError = EXTENSION_LOAD_ERROR_PATTERN.test(fullOutput);
-      resolveRun({
-        name,
-        command: "npm run smoke:pi",
-        exit_code: exitCode ?? 1,
-        passed: exitCode === 0 && !signal && !runError && !hasUnhandledError && !hasLoadError && assertions.every((item) => item.passed),
-        evidence: redactRepositoryRootPaths(fullOutput.slice(-6000) || "No output captured", root),
-        assertions,
-        hasUnhandledError,
-        hasLoadError,
+        runError,
       });
     };
 
@@ -143,11 +132,11 @@ function runPi(name, query) {
     const deadlineTimer = setTimeout(timeoutPi, 15_000);
 
     const checkCompletion = () => {
-      if (name === "extension_load") {
-        if (responses.some((row) => row?.command === "get_commands" && row.success === true)) endInput();
+      const commands = responses.find((row) => row?.command === "get_commands" && row.success === true);
+      if (!query) {
+        if (commands) endInput();
         return;
       }
-      const commands = responses.find((row) => row?.command === "get_commands" && row.success === true);
       if (!promptSent && commands) {
         const command = commands.data?.commands?.find((item) => item.name === "verse-docs:search" && item.source === "extension");
         if (!command) {
@@ -162,11 +151,9 @@ function runPi(name, query) {
       if (promptResponse && (promptResponse.success !== true || promptResponse.data?.disposition !== "handled")) {
         runError = "Pi did not handle the registered Verse docs slash command.";
         endInput();
-      } else if (name === "happy_path" && promptResponse && notification(responses, "SMOKE_RESULT:decides")) {
-        endInput();
-      } else if (name === "error_path" && promptResponse && notification(responses, "verse-mcp search_verse_docs failed: MCP error -32000: controlled smoke error")) {
-        endInput();
-      } else if (name === "reload_cleanup" && promptResponse && notification(responses, "SMOKE_RESULT:decides")) {
+      } else if (promptResponse && notification(responses, query === "smoke-error"
+        ? "verse-mcp search_verse_docs failed: MCP error -32000: controlled smoke error"
+        : "SMOKE_RESULT:decides")) {
         endInput();
       }
     };
@@ -197,6 +184,45 @@ function runPi(name, query) {
   });
 }
 
+function piCase(name, processes) {
+  const fullOutput = processes.map((process, index) =>
+    `--- Pi process ${index + 1}: exit_code=${process.exit_code}, signal=${process.signal ?? "none"} ---\n${process.fullOutput || "No output captured"}${process.runError ? `\n${process.runError}` : ""}`,
+  ).join("\n");
+  const exit_code = processes.at(-1)?.exit_code ?? 1;
+  const assertions = behaviorAssertions(name, {
+    responses: processes.at(-1)?.responses ?? [],
+    processes,
+    fullOutput,
+    exit_code,
+    expectedVersion: sdkVersions["@earendil-works/pi-coding-agent"],
+  });
+  const hasUnhandledError = UNHANDLED_ERROR_PATTERN.test(fullOutput);
+  const hasLoadError = EXTENSION_LOAD_ERROR_PATTERN.test(fullOutput);
+  const expectedProcessCount = name === "reload_cleanup" ? 2 : 1;
+  return {
+    name,
+    command: "npm run smoke:pi",
+    exit_code,
+    passed: processes.length === expectedProcessCount &&
+      processes.every((process) => process.exit_code === 0 && !process.signal && !process.runError) &&
+      !hasUnhandledError && !hasLoadError && assertions.every((item) => item.passed),
+    evidence: redactRepositoryRootPaths(fullOutput.slice(-6000) || "No output captured", root),
+    assertions,
+    hasUnhandledError,
+    hasLoadError,
+  };
+}
+
+async function runPi(name, query) {
+  return piCase(name, [await runPiProcess(query)]);
+}
+
+async function runReloadCleanup() {
+  const firstProcess = await runPiProcess("decides");
+  const secondProcess = await runPiProcess("decides");
+  return piCase("reload_cleanup", [firstProcess, secondProcess]);
+}
+
 function runHostShell(shell, args) {
   const result = spawnSync(shell, args, {
     cwd: root, env, encoding: "utf8", timeout: 15_000, windowsHide: true,
@@ -223,7 +249,7 @@ try {
     await runPi("extension_load"),
     await runPi("happy_path", "decides"),
     await runPi("error_path", "smoke-error"),
-    await runPi("reload_cleanup", "decides"),
+    await runReloadCleanup(),
   ];
 
   const expectedVersion = sdkVersions["@earendil-works/pi-coding-agent"];

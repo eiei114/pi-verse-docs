@@ -39,7 +39,7 @@ function notification(responses, prefix) {
   );
 }
 
-export function behaviorAssertions(name, { responses, fullOutput, exit_code, expectedVersion }) {
+export function behaviorAssertions(name, { responses = [], processes, fullOutput, exit_code, expectedVersion }) {
   const command = registeredCommand(responses);
   const prompt = promptResponse(responses);
   if (name === "extension_load") {
@@ -58,15 +58,48 @@ export function behaviorAssertions(name, { responses, fullOutput, exit_code, exp
     }, !!command && prompt?.success === true && prompt.data?.disposition === "handled" && !!error)];
   }
   if (name === "reload_cleanup") {
-    const result = notification(responses, "SMOKE_RESULT:decides");
+    const firstProcess = processes?.[0];
+    const secondProcess = processes?.[1];
+    const processObservation = (process) => {
+      if (!process) return null;
+      const command = registeredCommand(process.responses);
+      const prompt = promptResponse(process.responses);
+      const result = notification(process.responses, "SMOKE_RESULT:decides");
+      return {
+        command: command ?? null,
+        prompt: prompt ?? null,
+        result: result ?? null,
+        exit_code: process.exit_code,
+        signal: process.signal ?? null,
+        run_error: process.runError ?? null,
+        errors: UNHANDLED_ERROR_PATTERN.test(process.fullOutput ?? ""),
+      };
+    };
+    const first = processObservation(firstProcess);
+    const second = processObservation(secondProcess);
+    const hasFeatureResponse = (process) => {
+      const prompt = promptResponse(process?.responses ?? []);
+      return !!registeredCommand(process?.responses ?? []) &&
+        prompt?.success === true && prompt.data?.disposition === "handled" &&
+        !!notification(process?.responses ?? [], "SMOKE_RESULT:decides");
+    };
+    const allProcessesClean = processes?.length === 2 && processes.every((process) =>
+      process.exit_code === 0 && !process.signal && !process.runError &&
+      !UNHANDLED_ERROR_PATTERN.test(process.fullOutput ?? ""));
     return [
-      assertion("reloaded_extension_registered", "The second actual Pi process registers verse-docs:search", command ?? null, !!command),
-      assertion("reloaded_feature_response", "The second actual Pi process runs the extension and returns its MCP result", {
-        prompt: prompt ?? null, result: result ?? null,
-      }, prompt?.success === true && prompt.data?.disposition === "handled" && !!result),
-      assertion("clean_shutdown", "The second Pi host exits successfully without unhandled or shutdown errors", {
-        exit_code, errors: UNHANDLED_ERROR_PATTERN.test(fullOutput),
-      }, exit_code === 0 && !UNHANDLED_ERROR_PATTERN.test(fullOutput)),
+      assertion("reloaded_extension_registered", "After the first Pi process exits, a second actual Pi process registers verse-docs:search", {
+        process_count: processes?.length ?? 0,
+        first_command: first?.command ?? null,
+        second_command: second?.command ?? null,
+      }, !!first?.command && !!second?.command),
+      assertion("reloaded_feature_response", "Both actual Pi processes handle the Verse docs command and return its MCP result, including the restarted second process", {
+        first,
+        second,
+      }, hasFeatureResponse(firstProcess) && hasFeatureResponse(secondProcess)),
+      assertion("clean_shutdown", "Both sequential Pi hosts exit successfully without unhandled or shutdown errors", {
+        processes: processes?.map((process) => ({ exit_code: process.exit_code, signal: process.signal ?? null,
+          run_error: process.runError ?? null, errors: UNHANDLED_ERROR_PATTERN.test(process.fullOutput ?? "") })) ?? [],
+      }, allProcessesClean),
     ];
   }
   if (name === "host_shell") {

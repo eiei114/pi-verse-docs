@@ -9,7 +9,13 @@ const prompt = { type: "response", command: "prompt", success: true, data: { dis
 const result = { type: "extension_ui_request", method: "notify", message: "SMOKE_RESULT:decides" };
 const error = { type: "extension_ui_request", method: "notify", message: "verse-mcp search_verse_docs failed: MCP error -32000: controlled smoke error" };
 const observed = (responses = [command, prompt, result], fullOutput = "", exit_code = 0) => ({
-  responses, fullOutput, exit_code, expectedVersion: "1.1.0",
+  responses, fullOutput, exit_code, expectedVersion: "1.2.0",
+});
+const reloadObserved = (processes = [observed(), observed()]) => behaviorAssertions("reload_cleanup", {
+  processes,
+  fullOutput: processes.map((process) => process.fullOutput).join("\n"),
+  exit_code: processes.at(-1)?.exit_code ?? 1,
+  expectedVersion: "1.2.0",
 });
 
 test("smoke uses the behavior-v2 contract and parses JSON lines", () => {
@@ -34,20 +40,30 @@ test("error path requires a handled, user-visible negative result", () => {
 });
 
 test("reload needs second-process registration, feature result, and clean shutdown", () => {
-  const good = behaviorAssertions("reload_cleanup", observed());
+  const good = reloadObserved();
   assert.deepEqual(good.map((item) => item.id), ["reloaded_extension_registered", "reloaded_feature_response", "clean_shutdown"]);
   assert.ok(good.every((item) => item.passed));
-  for (const responses of [[], [command], [command, prompt], [prompt, result]]) {
-    assert.ok(behaviorAssertions("reload_cleanup", observed(responses)).some((item) => !item.passed));
+  for (const processes of [
+    [observed()],
+    [observed([command, prompt]), observed()],
+    [observed(), observed([])],
+    [observed(), observed([command, prompt])],
+    [observed([command, prompt, result], "", 1), observed()],
+    [observed(), observed([command, prompt, result], "", 1)],
+    [observed(), observed([command, { ...prompt, success: false }, result])],
+    [observed(), observed(), observed()],
+  ]) {
+    const assertions = reloadObserved(processes);
+    assert.ok(assertions.some((item) => !item.passed));
   }
-  for (const [output, code] of [["shutdown error", 0], ["UnhandledPromiseRejection", 0], ["", 1]]) {
-    assert.equal(behaviorAssertions("reload_cleanup", observed(undefined, output, code))[2].passed, false);
+  for (const output of ["shutdown error", "UnhandledPromiseRejection"]) {
+    assert.equal(reloadObserved([observed([], output), observed()])[2].passed, false);
   }
 });
 
 test("native shell assertion matches exactly the pinned version", () => {
-  assert.equal(behaviorAssertions("host_shell", observed([], "1.1.0\r\n"))[0].passed, true);
-  for (const output of ["", "11.1.0", "1.0.0", "1.1.0 with error"]) {
+  assert.equal(behaviorAssertions("host_shell", observed([], "1.2.0\r\n"))[0].passed, true);
+  for (const output of ["", "11.2.0", "1.1.0", "1.2.0 with error"]) {
     assert.equal(behaviorAssertions("host_shell", observed([], output))[0].passed, false);
   }
 });
