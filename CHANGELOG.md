@@ -8,8 +8,8 @@
 
 ### Changed
 
-- Pin the Pi SDK development and test dependencies to 1.1.0 while retaining wildcard peer ranges.
-- Prepare patch version 0.3.8 for the Pi SDK compatibility update; this does not publish or release the package.
+- Pin the Pi SDK development and test dependencies to 1.2.0 while retaining wildcard peer ranges.
+- Prepare patch version 0.3.9 for the Pi SDK compatibility update; this does not publish or release the package.
 - Require an explicit manual release workflow run; merging a version update no longer publishes automatically.
 
 ### Documentation

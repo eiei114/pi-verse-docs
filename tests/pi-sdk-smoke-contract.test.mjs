@@ -9,7 +9,7 @@ const prompt = { type: "response", command: "prompt", success: true, data: { dis
 const result = { type: "extension_ui_request", method: "notify", message: "SMOKE_RESULT:decides" };
 const error = { type: "extension_ui_request", method: "notify", message: "verse-mcp search_verse_docs failed: MCP error -32000: controlled smoke error" };
 const observed = (responses = [command, prompt, result], fullOutput = "", exit_code = 0) => ({
-  responses, fullOutput, exit_code, expectedVersion: "1.1.0",
+  responses, fullOutput, exit_code, expectedVersion: "1.2.0",
 });
 
 test("smoke uses the behavior-v2 contract and parses JSON lines", () => {
@@ -46,8 +46,8 @@ test("reload needs second-process registration, feature result, and clean shutdo
 });
 
 test("native shell assertion matches exactly the pinned version", () => {
-  assert.equal(behaviorAssertions("host_shell", observed([], "1.1.0\r\n"))[0].passed, true);
-  for (const output of ["", "11.1.0", "1.0.0", "1.1.0 with error"]) {
+  assert.equal(behaviorAssertions("host_shell", observed([], "1.2.0\r\n"))[0].passed, true);
+  for (const output of ["", "11.2.0", "1.1.0", "1.2.0 with error"]) {
     assert.equal(behaviorAssertions("host_shell", observed([], output))[0].passed, false);
   }
 });
