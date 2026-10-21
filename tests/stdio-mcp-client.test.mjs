@@ -31,6 +31,19 @@ rl.on("line", (line) => {
 });
 `;
 
+const malformedResponseServer = String.raw`
+const readline = require("node:readline");
+const rl = readline.createInterface({ input: process.stdin });
+rl.on("line", (line) => {
+  const message = JSON.parse(line);
+  if (message.method === "initialize") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params.protocolVersion, capabilities: {}, serverInfo: { name: "malformed", version: "0.0.0" } } }));
+    return;
+  }
+  if (message.method === "tools/list") process.stdout.write("{malformed-json}\n");
+});
+`;
+
 test("runOneShotMcpRequest initializes, calls one method, and returns the result", async () => {
   const result = await runOneShotMcpRequest(
     { command: process.execPath, args: ["-e", fakeServer], source: "node fake server" },
@@ -93,4 +106,32 @@ test("runOneShotMcpRequest surfaces structured MCP errors", async () => {
       return true;
     },
   );
+});
+
+test("runOneShotMcpRequest rejects malformed JSON responses and cleans up", async () => {
+  let child;
+
+  await assert.rejects(
+    () =>
+      runOneShotMcpRequest(
+        { command: process.execPath, args: ["-e", malformedResponseServer], source: "malformed JSON fake server" },
+        "tools/list",
+        undefined,
+        {
+          timeoutMs: 2000,
+          onProcess: (processChild) => {
+            child = processChild;
+          },
+        },
+      ),
+    (error) => {
+      assert.ok(error instanceof McpClientError);
+      assert.equal(error.code, "invalid_json");
+      assert.equal(error.details.line, "{malformed-json}");
+      return true;
+    },
+  );
+
+  assert.ok(child);
+  assert.notEqual(child.exitCode, null);
 });
