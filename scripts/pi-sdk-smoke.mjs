@@ -5,6 +5,7 @@ import { delimiter, dirname, resolve } from "node:path";
 import {
   behaviorAssertions,
   EXTENSION_LOAD_ERROR_PATTERN,
+  findSdkPinMismatches,
   parseJsonLines,
   SDK_NAMES,
   UNHANDLED_ERROR_PATTERN,
@@ -16,16 +17,16 @@ const root = resolve(import.meta.dirname, "..");
 const reportPath = smokeReportPath(root, process.argv.includes("--update-curated-report"));
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const manifest = readJson(resolve(root, "package.json"));
-const expectedVersions = Object.fromEntries(SDK_NAMES.map((name) => [name, "1.2.0"]));
 const sdkVersions = Object.fromEntries(SDK_NAMES.map((name) => [
   name,
   readJson(resolve(root, "node_modules", name, "package.json")).version,
 ]));
 
-for (const name of SDK_NAMES) {
-  if (manifest.devDependencies?.[name] !== expectedVersions[name] || sdkVersions[name] !== expectedVersions[name]) {
-    throw new Error(`Smoke requires the exact Pi SDK 1.2.0 dev/test pin for ${name}; manifest=${manifest.devDependencies?.[name]}, installed=${sdkVersions[name]}`);
-  }
+const sdkPinMismatches = findSdkPinMismatches(manifest.devDependencies, sdkVersions);
+if (sdkPinMismatches.length) {
+  const details = sdkPinMismatches.map(({ name, manifest: pinned, installed }) =>
+    `${name}: manifest=${pinned}, installed=${installed}`).join("; ");
+  throw new Error(`Smoke requires exact Pi SDK dev/test pins matching installed versions; ${details}`);
 }
 
 const piManifest = readJson(resolve(root, "node_modules/@earendil-works/pi-coding-agent/package.json"));
