@@ -16,15 +16,15 @@ const root = resolve(import.meta.dirname, "..");
 const reportPath = smokeReportPath(root, process.argv.includes("--update-curated-report"));
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const manifest = readJson(resolve(root, "package.json"));
-const expectedVersions = Object.fromEntries(SDK_NAMES.map((name) => [name, "1.2.0"]));
+const expectedVersions = Object.fromEntries(SDK_NAMES.map((name) => [name, manifest.devDependencies?.[name]]));
 const sdkVersions = Object.fromEntries(SDK_NAMES.map((name) => [
   name,
   readJson(resolve(root, "node_modules", name, "package.json")).version,
 ]));
 
 for (const name of SDK_NAMES) {
-  if (manifest.devDependencies?.[name] !== expectedVersions[name] || sdkVersions[name] !== expectedVersions[name]) {
-    throw new Error(`Smoke requires the exact Pi SDK 1.2.0 dev/test pin for ${name}; manifest=${manifest.devDependencies?.[name]}, installed=${sdkVersions[name]}`);
+  if (typeof expectedVersions[name] !== "string" || sdkVersions[name] !== expectedVersions[name]) {
+    throw new Error(`Smoke requires the exact Pi SDK manifest dev/test pin for ${name}; manifest=${expectedVersions[name]}, installed=${sdkVersions[name]}`);
   }
 }
 
