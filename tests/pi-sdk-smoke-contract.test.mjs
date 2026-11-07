@@ -102,3 +102,11 @@ test("smoke evidence redacts native and JSON-escaped repository-root paths", () 
     evidence: '{"sourceInfo":{"path":"<repo-root>/extensions/index.ts"}}',
   });
 });
+
+test("committed smoke report records the manifest-pinned SDK versions", () => {
+  const report = JSON.parse(readFileSync(new URL("../docs/verification/pi-sdk-smoke.json", import.meta.url), "utf8"));
+  for (const [name, version] of Object.entries(report.sdk_versions)) {
+    assert.equal(version, manifest.devDependencies[name], name);
+  }
+  assert.equal(Object.keys(report.sdk_versions).length, 4);
+});

@@ -10,6 +10,7 @@
 
 - Pin the Pi SDK development and test dependencies to 1.4.0 while retaining wildcard peer ranges.
 - Make the Pi SDK smoke use the exact development/test versions declared in the manifest.
+- Refresh the committed smoke evidence for Pi SDK 1.4.0, with a test that keeps the report aligned with the manifest pins.
 - Prepare patch version 0.3.10 for the Pi SDK compatibility update; this does not publish or release the package.
 - Require an explicit manual release workflow run; merging a version update no longer publishes automatically.
 
