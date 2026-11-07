@@ -1,21 +1,24 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { resolve } from "node:path";
 import { behaviorAssertions, parseJsonLines, VERIFICATION_CONTRACT } from "../scripts/pi-sdk-smoke-contract.mjs";
 import { redactRepositoryRootPaths, serializeRedactedReport, smokeReportPath } from "../scripts/pi-sdk-smoke-report.mjs";
 
+const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+const expectedSdkVersion = manifest.devDependencies["@earendil-works/pi-coding-agent"];
 const command = { command: "get_commands", success: true, data: { commands: [{ name: "verse-docs:search", source: "extension" }] } };
 const prompt = { type: "response", command: "prompt", success: true, data: { disposition: "handled" } };
 const result = { type: "extension_ui_request", method: "notify", message: "SMOKE_RESULT:decides" };
 const error = { type: "extension_ui_request", method: "notify", message: "verse-mcp search_verse_docs failed: MCP error -32000: controlled smoke error" };
 const observed = (responses = [command, prompt, result], fullOutput = "", exit_code = 0) => ({
-  responses, fullOutput, exit_code, expectedVersion: "1.2.0",
+  responses, fullOutput, exit_code, expectedVersion: expectedSdkVersion,
 });
 const reloadObserved = (processes = [observed(), observed()]) => behaviorAssertions("reload_cleanup", {
   processes,
   fullOutput: processes.map((process) => process.fullOutput).join("\n"),
   exit_code: processes.at(-1)?.exit_code ?? 1,
-  expectedVersion: "1.2.0",
+  expectedVersion: expectedSdkVersion,
 });
 
 test("smoke uses the behavior-v2 contract and parses JSON lines", () => {
@@ -61,9 +64,9 @@ test("reload needs second-process registration, feature result, and clean shutdo
   }
 });
 
-test("native shell assertion matches exactly the pinned version", () => {
-  assert.equal(behaviorAssertions("host_shell", observed([], "1.2.0\r\n"))[0].passed, true);
-  for (const output of ["", "11.2.0", "1.1.0", "1.2.0 with error"]) {
+test("native shell assertion matches exactly the SDK manifest pin", () => {
+  assert.equal(behaviorAssertions("host_shell", observed([], `${expectedSdkVersion}\r\n`))[0].passed, true);
+  for (const output of ["", `${expectedSdkVersion}.1`, `${expectedSdkVersion} with error`]) {
     assert.equal(behaviorAssertions("host_shell", observed([], output))[0].passed, false);
   }
 });
@@ -98,4 +101,12 @@ test("smoke evidence redacts native and JSON-escaped repository-root paths", () 
   assert.deepEqual(JSON.parse(posixReport), {
     evidence: '{"sourceInfo":{"path":"<repo-root>/extensions/index.ts"}}',
   });
+});
+
+test("committed smoke report records the manifest-pinned SDK versions", () => {
+  const report = JSON.parse(readFileSync(new URL("../docs/verification/pi-sdk-smoke.json", import.meta.url), "utf8"));
+  for (const [name, version] of Object.entries(report.sdk_versions)) {
+    assert.equal(version, manifest.devDependencies[name], name);
+  }
+  assert.equal(Object.keys(report.sdk_versions).length, 4);
 });
