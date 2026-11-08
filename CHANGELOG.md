@@ -13,6 +13,7 @@
 - Make the Pi SDK smoke use the exact development/test versions declared in the manifest.
 - Refresh the committed smoke evidence for Pi SDK 1.5.0, with a test that keeps the report aligned with the manifest pins.
 - Run CI on Windows and Linux so the smoke's native host-shell boundary is exercised on both platforms.
+- Force LF checkouts for the linted sources and declare read-only workflow permissions so the Windows CI job and the workflow audit stay clean.
 - Prepare patch version 0.3.11 for the Pi SDK compatibility update; this does not publish or release the package.
 - Require an explicit manual release workflow run; merging a version update no longer publishes automatically.
 
