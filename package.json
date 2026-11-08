@@ -1,6 +1,6 @@
 {
   "name": "pi-verse-docs",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Pi extension for on-demand Verse / UEFN docs lookup via verse-mcp.",
   "type": "module",
   "license": "MIT",
@@ -30,6 +30,7 @@
     "skills/",
     "docs/examples.md",
     "docs/release.md",
+    "docs/pi-sdk-compatibility.md",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -63,10 +64,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
-    "@earendil-works/pi-agent-core": "1.4.0",
-    "@earendil-works/pi-ai": "1.4.0",
-    "@earendil-works/pi-coding-agent": "1.4.0",
-    "@earendil-works/pi-tui": "1.4.0",
+    "@earendil-works/pi-agent-core": "1.5.0",
+    "@earendil-works/pi-ai": "1.5.0",
+    "@earendil-works/pi-coding-agent": "1.5.0",
+    "@earendil-works/pi-tui": "1.5.0",
     "@types/node": "^26.1.0",
     "typebox": "latest",
     "typescript": "^7.0.2"

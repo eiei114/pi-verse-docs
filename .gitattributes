@@ -1,0 +1,4 @@
+# Biome formats with LF. Force LF checkouts for the linted sources so
+# `npm run lint` passes on Windows runners (core.autocrlf=true) as well.
+lib/** text eol=lf
+extensions/** text eol=lf

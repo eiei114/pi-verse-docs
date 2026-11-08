@@ -110,3 +110,16 @@ test("committed smoke report records the manifest-pinned SDK versions", () => {
   }
   assert.equal(Object.keys(report.sdk_versions).length, 4);
 });
+
+test("compatibility doc states the manifest-pinned SDK versions", () => {
+  const doc = readFileSync(new URL("../docs/pi-sdk-compatibility.md", import.meta.url), "utf8");
+  for (const [name, version] of Object.entries(manifest.devDependencies)) {
+    if (!name.startsWith("@earendil-works/")) continue;
+    assert.ok(doc.includes(`\`${name}\`: \`${version}\``), `docs/pi-sdk-compatibility.md must list ${name}: ${version}`);
+  }
+  assert.match(doc, /pi-sdk-behavior-v2/);
+  assert.ok(
+    manifest.files.includes("docs/pi-sdk-compatibility.md"),
+    "the compatibility doc must ship in the published package",
+  );
+});
