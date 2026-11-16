@@ -8,9 +8,11 @@ import { discoverAndLoadExtensions } from "@earendil-works/pi-coding-agent";
 
 const root = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 
-// pi-schema is the validator Pi 1.5.0 runs on tool arguments. It installs next
-// to pi-coding-agent because the Pi packages share the exact same version, so
-// this resolves the host's copy instead of a second one from elsewhere.
+// pi-schema is the validator Pi 1.5.x runs on tool arguments. Pi 1.5.2 lists it
+// as a dependency of pi-ai and pi-agent-core, so a checkout without an explicit
+// pin can end up with the validator nested under those packages instead of next
+// to pi-coding-agent. This resolves the package the manifest pins, which is the
+// copy Pi's own validation entry point imports.
 function resolvePiSchemaEntry() {
   const candidates = [];
   try {
@@ -36,7 +38,7 @@ const tools = (loadedTools instanceof Map ? [...loadedTools.values()] : [...(loa
   .map((tool) => tool.definition ?? tool);
 const toolNamed = (name) => tools.find((tool) => tool.name === name);
 
-test("the actual Pi 1.5.0 loader loads this extension without errors", () => {
+test("the actual Pi 1.5.x loader loads this extension without errors", () => {
   assert.deepEqual(loaded.errors, []);
   assert.deepEqual(loaded.warnings ?? [], []);
   assert.equal(loaded.extensions.length, 1);
@@ -61,6 +63,12 @@ test("the actual Pi 1.5.0 loader loads this extension without errors", () => {
 
 test("the tested validator is the single pi-schema copy the Pi host installs", () => {
   const lockfile = JSON.parse(readFileSync(resolve(root, "package-lock.json"), "utf8"));
+  const manifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  assert.equal(
+    manifest.devDependencies["@earendil-works/pi-schema"],
+    manifest.devDependencies["@earendil-works/pi-coding-agent"],
+    "the manifest must pin pi-schema to the Pi SDK version",
+  );
   const schemaCopies = Object.keys(lockfile.packages).filter((path) => path.endsWith("/@earendil-works/pi-schema"));
   assert.deepEqual(schemaCopies, ["node_modules/@earendil-works/pi-schema"]);
   assert.equal(
@@ -71,15 +79,24 @@ test("the tested validator is the single pi-schema copy the Pi host installs", (
     fileURLToPath(schemaEntry).startsWith(resolve(root, "node_modules/@earendil-works/pi-schema")),
     `compiled against ${schemaEntry}`,
   );
+  // Pi validates tool arguments from @earendil-works/pi-ai, so a nested copy
+  // under that package would be the validator the host actually imports.
+  for (const owner of ["pi-ai", "pi-agent-core"]) {
+    assert.equal(
+      existsSync(resolve(root, `node_modules/@earendil-works/${owner}/node_modules/@earendil-works/pi-schema`)),
+      false,
+      `@earendil-works/${owner} must not install a second pi-schema copy`,
+    );
+  }
 });
 
-test("every registered tool schema compiles under the Pi 1.5.0 pi-schema validator", () => {
+test("every registered tool schema compiles under the hosted pi-schema validator", () => {
   for (const tool of tools) {
     assert.doesNotThrow(() => compile(tool.parameters, { coerce: true }), `${tool.name} schema must compile`);
   }
 });
 
-test("tool arguments are validated and coerced like Pi 1.5.0 does", () => {
+test("tool arguments are validated and coerced like Pi 1.5.x does", () => {
   const validator = compile(toolNamed("verse_docs_search").parameters, { coerce: true });
 
   assert.deepEqual(validator.parse({ query: "decides", maxChars: "2500", timeoutMs: "1500" }), {
@@ -102,7 +119,7 @@ test("tool arguments are validated and coerced like Pi 1.5.0 does", () => {
   );
 });
 
-test("schemas stay inside JSON Schema, so 1.5.0 drops no TypeBox-only constraint", () => {
+test("schemas stay inside JSON Schema, so pi-schema drops no TypeBox-only constraint", () => {
   for (const tool of tools) {
     const serialized = JSON.stringify(tool.parameters);
     for (const keyword of ["$ref", "codec", "bigint", "undefined", "void"]) {

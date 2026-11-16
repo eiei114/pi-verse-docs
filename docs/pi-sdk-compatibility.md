@@ -2,20 +2,30 @@
 
 `pi-verse-docs` is verified against the frozen Pi SDK wave below.
 
-- `@earendil-works/pi-agent-core`: `1.5.0`
-- `@earendil-works/pi-ai`: `1.5.0`
-- `@earendil-works/pi-coding-agent`: `1.5.0`
-- `@earendil-works/pi-tui`: `1.5.0`
+- `@earendil-works/pi-agent-core`: `1.5.2`
+- `@earendil-works/pi-ai`: `1.5.2`
+- `@earendil-works/pi-coding-agent`: `1.5.2`
+- `@earendil-works/pi-tui`: `1.5.2`
+- `@earendil-works/pi-schema`: `1.5.2`
 
 These are exact development and test pins only. The published peer dependency
 ranges stay `*` so the package keeps working against the Pi version that hosts
 it. `npm run smoke:pi` refuses to run when an installed SDK version differs from
 the manifest pin, so a stale `node_modules` cannot produce passing evidence.
 
-## 1.5.0 migration notes that apply here
+`@earendil-works/pi-schema` is also pinned as an exact development dependency.
+Pi 1.5.0 hoisted a single pi-schema next to `pi-coding-agent`, but 1.5.2 lists it
+as a dependency of both `pi-ai` and `pi-agent-core`. Without an explicit pin npm
+keeps two nested copies and nothing at the top of `node_modules`, which breaks the
+schema test's single-copy assertion and hides which validator Pi actually runs.
+The schema test fails when the installed pi-schema differs from this pin, and
+`npm run smoke:pi` does the same for the four SDK packages above.
+
+## 1.5.x migration notes that apply here
 
 The official [Pi v1.5.0 release notes](https://github.com/earendil-works/pi/releases/tag/v1.5.0)
-move tool argument validation to `@earendil-works/pi-schema`.
+move tool argument validation to `@earendil-works/pi-schema`; 1.5.1 and 1.5.2 keep
+that path, so the notes below still describe the current pins.
 `pi-verse-docs` needs no API migration for this change, because every tool
 schema is plain JSON Schema:
 
@@ -40,7 +50,7 @@ Two behavioural consequences do reach this package:
    `- maxChars: expected number, got string`) instead of TypeBox messages. No
    test or document in this repository asserts the old wording.
 
-`pi-coding-agent` 1.5.0 pins `typebox` to exactly `1.3.27`, so the lockfile keeps
+`pi-coding-agent` 1.5.2 pins `typebox` to exactly `1.3.27`, so the lockfile keeps
 that version and `npm ls typebox` shows a single copy. Moving `typebox` to 1.4.x
 would install a second copy next to Pi's own.
 
@@ -73,7 +83,7 @@ The harness starts the real locally pinned Pi CLI (`--offline --no-session
 | `happy_path` | `/verse-docs:search decides` is handled and returns the fixture result `SMOKE_RESULT:decides` |
 | `error_path` | an MCP error is surfaced as a handled error notification while Pi still handles the command |
 | `reload_cleanup` | a second actual Pi process registers the command, returns the fixture result, and both hosts exit cleanly |
-| `host_shell` | the native host shell (PowerShell on Windows, `/bin/sh` on POSIX) launches the pinned CLI and prints exactly `1.5.0` |
+| `host_shell` | the native host shell (PowerShell on Windows, `/bin/sh` on POSIX) launches the pinned CLI and prints exactly the manifest SDK version (`1.5.2`) |
 
 Every case also fails on unhandled rejection, extension load error or a non-zero
 exit, and `tests/pi-sdk-smoke-contract.test.mjs` feeds the assertion helpers
@@ -83,8 +93,8 @@ with `verification_contract=pi-sdk-behavior-v2` and the four frozen versions.
 
 `tests/pi-sdk-tool-schema.test.mjs` covers the 1.5.0 validation change without a
 live model: it loads this extension through the real Pi loader, asserts that all
-eight tool schemas compile under the host's own `@earendil-works/pi-schema`, and
-checks the coerced argument and both error messages a model would see. It fails
+eight tool schemas compile under the pinned `@earendil-works/pi-schema`, and
+checks the coerced arguments and both error messages a model would see. It fails
 if a schema starts using a TypeBox-only keyword, and it proves only one
 `pi-schema` copy is installed so the validator under test is Pi's.
 
