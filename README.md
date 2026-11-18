@@ -100,14 +100,18 @@ When working with Verse or UEFN:
 Run `verse_docs_status` to check setup. Use `verbose: true` to list the
 `python_checked` and `verse_mcp_checked` candidate paths. Its `python` and
 `verse-mcp` lines report detection, `cache_dir` shows the cache location, and
-`mcp_ping` appears when you request `ping: true`.
+with `ping: true`, `mcp_ping` appears only when Python is supported and a
+`verse-mcp` command is found. A missing `mcp_ping` line does not mean the ping
+passed; status may still say `ready` when `verse-mcp` is found.
 
 - **Python missing:** `Python 3.10+ was not found on PATH. Install from https://www.python.org/downloads/`
   Install Python 3.10 or newer from [python.org](https://www.python.org/downloads/),
   then restart Pi so it inherits the updated PATH.
 - **Python too old:** `Found Python ${version.raw} at ${candidate}, but verse-mcp requires Python 3.10+`
   (for example, Python 3.9). Install Python 3.10 or newer and ensure that
-  version is found on PATH.
+  the first candidate checked (`py -3` on Windows, then `python` and `python3`)
+  resolves to it. Put its PATH entry before older interpreters if needed, then
+  rerun `verse_docs_status`.
 - **Python version unknown:** `Found Python launcher at ${candidate}, but could not determine the version.`
   Check the reported candidate with `--version`;
   install or repair the Python launcher if it cannot report its version.
