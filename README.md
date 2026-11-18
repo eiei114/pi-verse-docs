@@ -111,8 +111,9 @@ Run `verse_docs_status` to check setup. Use `verbose: true` to list the
 - **Python version unknown:** `Found Python launcher at ${candidate}, but could not determine the version.`
   Check the reported candidate with `--version`;
   install or repair the Python launcher if it cannot report its version.
-- **Neither `verse-mcp` nor `uvx` found:** `verse-mcp was not found on PATH, and
-  uvx fallback is unavailable.` Install with `pip install
+- **Neither `verse-mcp` nor `uvx` found:**
+  `verse-mcp was not found on PATH, and uvx fallback is unavailable. Install verse-mcp or uv.`
+  Install with `pip install
   git+https://github.com/BurgersJackson/verse-mcp.git`, or install `uv` and use
   the [uvx setup](#prerequisites).
 - **Lookup timeout:** `verse-mcp timed out while running ${upstreamTool}. Retry, increase timeoutMs, or warm the cache with verse_docs_cache_all.`
