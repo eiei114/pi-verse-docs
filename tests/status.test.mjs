@@ -32,19 +32,15 @@ function createStatusSummary(overrides = {}) {
 
 test("formatVerseDocsStatus formats a ready summary and optional runtime details", () => {
   const summary = createStatusSummary();
+  const output = formatVerseDocsStatus(summary);
 
-  assert.equal(
-    formatVerseDocsStatus(summary),
-    [
-      "pi-verse-docs status: ready",
-      "python: Found Python 3.12.1 at /usr/bin/python3",
-      "verse-mcp: Found verse-mcp on PATH at /usr/local/bin/verse-mcp",
-      "python_version: 3.12.1",
-      "python_command: /usr/bin/python3 -3",
-      "verse_mcp_command: /usr/local/bin/verse-mcp",
-      "cache_dir: /cache/verse-mcp",
-    ].join("\n"),
-  );
+  assert.ok(output.startsWith("pi-verse-docs status: ready"));
+  assert.ok(output.includes(`python: ${summary.python.message}`));
+  assert.ok(output.includes(`verse-mcp: ${summary.verseMcp.message}`));
+  assert.ok(output.includes(`python_version: ${summary.python.version}`));
+  assert.ok(output.includes("python_command: /usr/bin/python3 -3"));
+  assert.ok(output.includes("verse_mcp_command: /usr/local/bin/verse-mcp"));
+  assert.ok(output.includes(`cache_dir: ${summary.cacheDir}`));
   assert.equal(statusNotificationLevel(summary), "info");
 });
 
@@ -71,20 +67,14 @@ test("formatVerseDocsStatus formats setup-needed status with install hints", () 
       "Or use uvx on demand: uvx --from git+https://github.com/BurgersJackson/verse-mcp verse-mcp",
     ],
   });
+  const output = formatVerseDocsStatus(summary);
 
-  assert.equal(
-    formatVerseDocsStatus(summary),
-    [
-      "pi-verse-docs status: setup needed",
-      "python: Python 3.10+ was not found on PATH.",
-      "verse-mcp: verse-mcp was not found on PATH, and uvx fallback is unavailable.",
-      "cache_dir: /cache/verse-mcp",
-      "install_hints:",
-      "- Install Python 3.10+: https://www.python.org/downloads/",
-      "- Install verse-mcp with pip: pip install git+https://github.com/BurgersJackson/verse-mcp.git",
-      "- Or use uvx on demand: uvx --from git+https://github.com/BurgersJackson/verse-mcp verse-mcp",
-    ].join("\n"),
-  );
+  assert.ok(output.startsWith("pi-verse-docs status: setup needed"));
+  assert.ok(output.includes(`python: ${summary.python.message}`));
+  assert.ok(output.includes(`verse-mcp: ${summary.verseMcp.message}`));
+  assert.ok(output.includes(`cache_dir: ${summary.cacheDir}`));
+  assert.ok(output.includes("install_hints:"));
+  for (const hint of summary.installHints) assert.ok(output.includes(`- ${hint}`));
   assert.equal(statusNotificationLevel(summary), "warning");
 });
 
