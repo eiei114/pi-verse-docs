@@ -120,6 +120,10 @@ export async function runOneShotMcpRequests(
     throw new McpClientError("invalid_request", "At least one MCP request is required");
   }
 
+  if (options.signal?.aborted) {
+    throw new McpClientError("aborted", "MCP request aborted");
+  }
+
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const spawnCommand = makeSpawnCommand(command);
   const child = spawn(spawnCommand.command, spawnCommand.args, {
@@ -133,6 +137,7 @@ export async function runOneShotMcpRequests(
   let stdoutBuffer = "";
   let stderr = "";
   let finalized = false;
+  let spawnFailed = false;
   const pending = new Map<number, PendingRequest>();
 
   const failAll = (error: Error): void => {
@@ -148,19 +153,38 @@ export async function runOneShotMcpRequests(
     options.onProcessExit?.(child);
     child.stdin.end();
 
-    if (child.exitCode !== null || child.killed) return;
+    if (child.exitCode !== null || child.signalCode !== null || (spawnFailed && child.pid === undefined)) return;
 
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(() => {
-        if (child.exitCode === null && !child.killed) child.kill();
-        resolve();
-      }, 250);
+    const waitForExit = (waitMs?: number): Promise<boolean> =>
+      new Promise((resolve) => {
+        if (child.exitCode !== null || child.signalCode !== null) {
+          resolve(true);
+          return;
+        }
 
-      child.once("exit", () => {
-        clearTimeout(timer);
-        resolve();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const onExit = (): void => {
+          if (timer) clearTimeout(timer);
+          resolve(true);
+        };
+
+        child.once("exit", onExit);
+        if (waitMs !== undefined) {
+          timer = setTimeout(() => {
+            child.off("exit", onExit);
+            resolve(false);
+          }, waitMs);
+        }
+
+        if (child.exitCode !== null || child.signalCode !== null) {
+          onExit();
+        }
       });
-    });
+
+    if (await waitForExit(250)) return;
+
+    child.kill("SIGKILL");
+    await waitForExit();
   };
 
   child.stdout.on("data", (chunk: Buffer) => {
@@ -197,6 +221,7 @@ export async function runOneShotMcpRequests(
   });
 
   child.on("error", (error) => {
+    spawnFailed = child.pid === undefined;
     failAll(
       new McpClientError("spawn_failed", `Failed to start MCP process: ${error.message}`, {
         command: spawnCommand.command,
@@ -257,6 +282,10 @@ export async function runOneShotMcpRequests(
   };
 
   try {
+    if (options.signal?.aborted) {
+      throw new McpClientError("aborted", "MCP request aborted");
+    }
+
     await sendRequest("initialize", {
       protocolVersion: MCP_PROTOCOL_VERSION,
       capabilities: {},
