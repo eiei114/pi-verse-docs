@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 const { callVerseDocsTool } = await import("../lib/verse-docs.ts");
+const { McpClientError } = await import("../lib/stdio-mcp-client.ts");
 
 const fakeServer = String.raw`
 const readline = require("node:readline");
@@ -36,6 +37,43 @@ rl.on("line", (line) => {
 `;
 
 const fakeCommand = { command: process.execPath, args: ["-e", fakeServer], source: "node fake server" };
+const resolveFakeCommand = async () => ({
+  supported: true,
+  platform: process.platform,
+  found: true,
+  command: fakeCommand,
+  checked: [],
+  message: "ok",
+});
+
+async function assertInjectedMcpErrorMapping(code, message, expectedMessage) {
+  let resolverCalls = 0;
+  let requestCalls = 0;
+
+  await assert.rejects(
+    () =>
+      callVerseDocsTool("search_verse_docs", { query: "decides" }, {
+        resolveCommand: async () => {
+          resolverCalls += 1;
+          return resolveFakeCommand();
+        },
+        request: async (command, method, params) => {
+          requestCalls += 1;
+          assert.equal(command, fakeCommand);
+          assert.equal(method, "tools/call");
+          assert.deepEqual(params, { name: "search_verse_docs", arguments: { query: "decides" } });
+          throw new McpClientError(code, message);
+        },
+      }),
+    (error) => {
+      assert.equal(error.message, expectedMessage);
+      return true;
+    },
+  );
+
+  assert.equal(resolverCalls, 1);
+  assert.equal(requestCalls, 1);
+}
 
 test("callVerseDocsTool formats a search result through tools/call", async () => {
   const result = await callVerseDocsTool("search_verse_docs", { query: "decides" }, {
@@ -82,5 +120,29 @@ test("callVerseDocsTool maps MCP errors to actionable text", async () => {
         resolveCommand: async () => ({ supported: true, platform: process.platform, found: true, command: fakeCommand, checked: [], message: "ok" }),
       }),
     /verse-mcp missing_tool failed: MCP error -32601: Method not found/,
+  );
+});
+
+test("callVerseDocsTool gives retry guidance when verse-mcp times out", async () => {
+  await assertInjectedMcpErrorMapping(
+    "timeout",
+    "Timed out waiting for MCP tools/call after 1000ms",
+    "verse-mcp timed out while running search_verse_docs. Retry, increase timeoutMs, or warm the cache with verse_docs_cache_all.",
+  );
+});
+
+test("callVerseDocsTool reports when verse-mcp fails to start", async () => {
+  await assertInjectedMcpErrorMapping(
+    "spawn_failed",
+    "Failed to start MCP process: spawn uvx ENOENT",
+    "Failed to run verse-mcp for search_verse_docs: Failed to start MCP process: spawn uvx ENOENT",
+  );
+});
+
+test("callVerseDocsTool reports when verse-mcp exits before responding", async () => {
+  await assertInjectedMcpErrorMapping(
+    "process_exited",
+    "MCP process exited before responding",
+    "Failed to run verse-mcp for search_verse_docs: MCP process exited before responding",
   );
 });
