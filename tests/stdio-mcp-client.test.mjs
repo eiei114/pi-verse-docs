@@ -31,6 +31,22 @@ rl.on("line", (line) => {
 });
 `;
 
+const noisyStderrServer = String.raw`
+const readline = require("node:readline");
+const rl = readline.createInterface({ input: process.stdin });
+rl.on("line", (line) => {
+  const message = JSON.parse(line);
+  if (message.method === "initialize") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params.protocolVersion, capabilities: { tools: {} }, serverInfo: { name: "noisy", version: "0.0.0" } } }));
+    return;
+  }
+  if (message.method === "tools/list") {
+    process.stderr.write("DISCARDED_STDERR_PREFIX_" + "x".repeat(25000) + "UNIQUE_STDERR_TAIL_MARKER");
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { tools: [{ name: "search_verse_docs" }] } }));
+  }
+});
+`;
+
 const malformedResponseServer = String.raw`
 const readline = require("node:readline");
 const rl = readline.createInterface({ input: process.stdin });
@@ -66,6 +82,22 @@ test("runOneShotMcpRequest initializes, calls one method, and returns the result
   );
 
   assert.deepEqual(result.response.result, { tools: [{ name: "search_verse_docs", description: "Search Verse docs" }] });
+});
+
+test("runOneShotMcpRequest keeps only the final 20,000 stderr characters", async () => {
+  const result = await runOneShotMcpRequest(
+    { command: process.execPath, args: ["-e", noisyStderrServer], source: "noisy node fake server" },
+    "tools/list",
+    undefined,
+    { timeoutMs: 2000 },
+  );
+  const expectedTail = ("DISCARDED_STDERR_PREFIX_" + "x".repeat(25000) + "UNIQUE_STDERR_TAIL_MARKER").slice(-20_000);
+
+  assert.deepEqual(result.response.result, { tools: [{ name: "search_verse_docs" }] });
+  assert.equal(result.stderr.length, 20_000);
+  assert.equal(result.stderr, expectedTail);
+  assert.ok(result.stderr.includes("UNIQUE_STDERR_TAIL_MARKER"));
+  assert.ok(!result.stderr.includes("DISCARDED_STDERR_PREFIX_"));
 });
 
 test("runOneShotMcpRequests supports multiple requests in one process", async () => {
