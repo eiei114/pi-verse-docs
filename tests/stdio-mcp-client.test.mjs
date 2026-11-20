@@ -149,6 +149,41 @@ test("runOneShotMcpRequest rejects malformed JSON responses and cleans up", asyn
   assert.notEqual(child.exitCode, null);
 });
 
+test("runOneShotMcpRequest times out and stops a non-responding server", async () => {
+  const timeoutMs = 500;
+  let child;
+  let requestedMethodReceived = false;
+
+  await assert.rejects(
+    () =>
+      runOneShotMcpRequest(
+        { command: process.execPath, args: ["-e", waitingServer], source: "waiting fake server" },
+        "tools/call",
+        { name: "search_verse_docs", arguments: { query: "timeout" } },
+        {
+          timeoutMs,
+          onProcess: (processChild) => {
+            child = processChild;
+            processChild.stderr.on("data", (chunk) => {
+              if (chunk.toString().includes("TOOLS_CALL_RECEIVED")) requestedMethodReceived = true;
+            });
+          },
+        },
+      ),
+    (error) => {
+      assert.ok(error instanceof McpClientError);
+      assert.equal(error.code, "timeout");
+      assert.equal(error.details.method, "tools/call");
+      assert.equal(error.details.timeoutMs, timeoutMs);
+      return true;
+    },
+  );
+
+  assert.ok(requestedMethodReceived, "the fake server should receive the requested method");
+  assert.ok(child);
+  assert.ok(child.exitCode !== null || child.signalCode !== null, "timed-out fake-server child should have exited");
+});
+
 test("runOneShotMcpRequest aborts an in-flight call and waits for the child to exit", async () => {
   const controller = new AbortController();
   let child;
