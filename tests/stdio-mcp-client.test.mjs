@@ -44,6 +44,19 @@ rl.on("line", (line) => {
 });
 `;
 
+const waitingServer = String.raw`
+const readline = require("node:readline");
+const rl = readline.createInterface({ input: process.stdin });
+rl.on("line", (line) => {
+  const message = JSON.parse(line);
+  if (message.method === "initialize") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params.protocolVersion, capabilities: {}, serverInfo: { name: "waiting", version: "0.0.0" } } }));
+    return;
+  }
+  if (message.method === "tools/call") process.stderr.write("TOOLS_CALL_RECEIVED");
+});
+`;
+
 test("runOneShotMcpRequest initializes, calls one method, and returns the result", async () => {
   const result = await runOneShotMcpRequest(
     { command: process.execPath, args: ["-e", fakeServer], source: "node fake server" },
@@ -134,4 +147,64 @@ test("runOneShotMcpRequest rejects malformed JSON responses and cleans up", asyn
 
   assert.ok(child);
   assert.notEqual(child.exitCode, null);
+});
+
+test("runOneShotMcpRequest aborts an in-flight call and waits for the child to exit", async () => {
+  const controller = new AbortController();
+  let child;
+
+  await assert.rejects(
+    () =>
+      runOneShotMcpRequest(
+        { command: process.execPath, args: ["-e", waitingServer], source: "waiting fake server" },
+        "tools/call",
+        { name: "search_verse_docs", arguments: { query: "cancel me" } },
+        {
+          timeoutMs: 2000,
+          signal: controller.signal,
+          onProcess: (processChild) => {
+            child = processChild;
+            processChild.stderr.on("data", (chunk) => {
+              if (chunk.toString().includes("TOOLS_CALL_RECEIVED")) controller.abort();
+            });
+          },
+        },
+      ),
+    (error) => {
+      assert.ok(error instanceof McpClientError);
+      assert.equal(error.code, "aborted");
+      return true;
+    },
+  );
+
+  assert.ok(child);
+  assert.ok(child.exitCode !== null || child.signalCode !== null, "aborted fake-server child should have exited");
+});
+
+test("runOneShotMcpRequest rejects a pre-aborted signal without spawning a child", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  let child;
+
+  await assert.rejects(
+    () =>
+      runOneShotMcpRequest(
+        { command: process.execPath, args: ["-e", waitingServer], source: "waiting fake server" },
+        "tools/call",
+        undefined,
+        {
+          signal: controller.signal,
+          onProcess: (processChild) => {
+            child = processChild;
+          },
+        },
+      ),
+    (error) => {
+      assert.ok(error instanceof McpClientError);
+      assert.equal(error.code, "aborted");
+      return true;
+    },
+  );
+
+  assert.equal(child, undefined, "pre-aborted request should not spawn a child");
 });
