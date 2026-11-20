@@ -31,6 +31,31 @@ rl.on("line", (line) => {
 });
 `;
 
+const noisyStderrServer = String.raw`
+const readline = require("node:readline");
+const rl = readline.createInterface({ input: process.stdin });
+const stderrPayload = "DISCARDED_STDERR_PREFIX_" + "x".repeat(25000) + "UNIQUE_STDERR_TAIL_MARKER";
+let waitingForStderrAck = false;
+let pendingToolsListId;
+rl.on("line", (line) => {
+  const message = JSON.parse(line);
+  if (message.method === "initialize") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params.protocolVersion, capabilities: { tools: {} }, serverInfo: { name: "noisy", version: "0.0.0" } } }));
+    return;
+  }
+  if (message.method === "tools/list") {
+    pendingToolsListId = message.id;
+    waitingForStderrAck = true;
+    process.stderr.write(stderrPayload);
+    return;
+  }
+  if (message.method === "test/ack-stderr" && waitingForStderrAck) {
+    waitingForStderrAck = false;
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: pendingToolsListId, result: { tools: [{ name: "search_verse_docs" }] } }));
+  }
+});
+`;
+
 const malformedResponseServer = String.raw`
 const readline = require("node:readline");
 const rl = readline.createInterface({ input: process.stdin });
@@ -66,6 +91,38 @@ test("runOneShotMcpRequest initializes, calls one method, and returns the result
   );
 
   assert.deepEqual(result.response.result, { tools: [{ name: "search_verse_docs", description: "Search Verse docs" }] });
+});
+
+test("runOneShotMcpRequest keeps only the final 20,000 stderr characters", async () => {
+  const expectedStderr = "DISCARDED_STDERR_PREFIX_" + "x".repeat(25000) + "UNIQUE_STDERR_TAIL_MARKER";
+  let observedStderr = "";
+  let stderrAckSent = false;
+  const result = await runOneShotMcpRequest(
+    { command: process.execPath, args: ["-e", noisyStderrServer], source: "noisy node fake server" },
+    "tools/list",
+    undefined,
+    {
+      timeoutMs: 2000,
+      onProcess: (child) => {
+        // Hold the valid response until the parent has received the entire stderr payload.
+        child.stderr.on("data", (chunk) => {
+          observedStderr += chunk.toString("utf8");
+          if (!stderrAckSent && observedStderr.length === expectedStderr.length) {
+            stderrAckSent = true;
+            child.stdin.write(`${JSON.stringify({ method: "test/ack-stderr" })}\n`);
+          }
+        });
+      },
+    },
+  );
+  const expectedTail = expectedStderr.slice(-20_000);
+
+  assert.equal(observedStderr, expectedStderr);
+  assert.deepEqual(result.response.result, { tools: [{ name: "search_verse_docs" }] });
+  assert.equal(result.stderr.length, 20_000);
+  assert.equal(result.stderr, expectedTail);
+  assert.ok(result.stderr.includes("UNIQUE_STDERR_TAIL_MARKER"));
+  assert.ok(!result.stderr.includes("DISCARDED_STDERR_PREFIX_"));
 });
 
 test("runOneShotMcpRequests supports multiple requests in one process", async () => {
