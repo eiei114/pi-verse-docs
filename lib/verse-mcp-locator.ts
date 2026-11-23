@@ -34,7 +34,7 @@ function unique(values: string[]): string[] {
 }
 
 function normalizePathEntry(entry: string): string {
-  return entry.replace(/^"|"$/g, "").trim();
+  return entry.trim().replace(/^"|"$/g, "").trim();
 }
 
 function getPathDirectories(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): string[] {

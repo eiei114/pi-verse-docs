@@ -30,6 +30,34 @@ test("resolver prefers a PATH-installed verse-mcp executable", async () => {
   assert.deepEqual(status.command?.args, []);
 });
 
+test("resolver prefers verse-mcp in a padded, quoted Windows PATH entry over uvx", async () => {
+  const installed = "C:\\Program Files\\Tools\\verse-mcp.exe";
+  const uvx = "C:\\tools\\uvx.exe";
+  const probes = [];
+  const status = await resolveVerseMcpCommand({
+    platform: "win32",
+    env: {
+      PATH: 'C:\\tools; "C:\\Program Files\\Tools" ',
+      PATHEXT: ".EXE;.CMD",
+    },
+    exists: async (path) => {
+      probes.push(path);
+      return path === installed || path === uvx;
+    },
+  });
+
+  assert.equal(status.mode, "path");
+  assert.equal(status.command?.command, installed);
+  assert.deepEqual(status.command?.args, []);
+  assert.deepEqual(probes, [
+    "C:\\tools\\verse-mcp",
+    "C:\\tools\\verse-mcp.exe",
+    "C:\\tools\\verse-mcp.cmd",
+    "C:\\Program Files\\Tools\\verse-mcp",
+    installed,
+  ]);
+});
+
 test("resolver falls back to uvx when verse-mcp is absent", async () => {
   const status = await resolveVerseMcpCommand({
     platform: "darwin",
