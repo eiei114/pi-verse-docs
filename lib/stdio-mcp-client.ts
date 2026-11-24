@@ -1,5 +1,6 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { basename } from "node:path";
+import { StringDecoder } from "node:string_decoder";
 import type { VerseMcpCommand } from "./verse-mcp-locator.ts";
 
 export interface JsonRpcSuccess<T = unknown> {
@@ -134,6 +135,7 @@ export async function runOneShotMcpRequests(
   options.onProcess?.(child);
 
   let nextId = 1;
+  const stdoutDecoder = new StringDecoder("utf8");
   let stdoutBuffer = "";
   let stderr = "";
   let finalized = false;
@@ -188,7 +190,7 @@ export async function runOneShotMcpRequests(
   };
 
   child.stdout.on("data", (chunk: Buffer) => {
-    stdoutBuffer += chunk.toString("utf8");
+    stdoutBuffer += stdoutDecoder.write(chunk);
 
     while (true) {
       const newlineIndex = stdoutBuffer.indexOf("\n");
