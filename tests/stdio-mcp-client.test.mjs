@@ -31,6 +31,26 @@ rl.on("line", (line) => {
 });
 `;
 
+const splitUtf8Server = String.raw`
+const readline = require("node:readline");
+const rl = readline.createInterface({ input: process.stdin });
+let suffix;
+rl.on("line", (line) => {
+  const message = JSON.parse(line);
+  if (message.method === "initialize") {
+    console.log(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: {} }));
+  } else if (message.method === "tools/call") {
+    const result = { content: [{ type: "text", text: message.params.text }] };
+    const response = Buffer.from(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }) + "\n");
+    const split = response.indexOf(Buffer.from(message.params.text)) + 1;
+    suffix = response.subarray(split);
+    process.stdout.write(response.subarray(0, split));
+  } else if (message.method === "test/ack-stdout-prefix") {
+    process.stdout.write(suffix);
+  }
+});
+`;
+
 const noisyStderrServer = String.raw`
 const readline = require("node:readline");
 const rl = readline.createInterface({ input: process.stdin });
@@ -91,6 +111,33 @@ test("runOneShotMcpRequest initializes, calls one method, and returns the result
   );
 
   assert.deepEqual(result.response.result, { tools: [{ name: "search_verse_docs", description: "Search Verse docs" }] });
+});
+
+test("runOneShotMcpRequest preserves UTF-8 split across stdout chunks", async () => {
+  const text = "📚 Verse 日本語";
+  const firstByte = Buffer.from(text)[0];
+  let acknowledged = false;
+
+  const { response } = await runOneShotMcpRequest(
+    { command: process.execPath, args: ["-e", splitUtf8Server], source: "split UTF-8 fake server" },
+    "tools/call",
+    { text },
+    {
+      timeoutMs: 2000,
+      onProcess: (child) => {
+        child.stdout.on("data", (chunk) => {
+          if (acknowledged || !chunk.includes(firstByte)) return;
+
+          // The server sends the remaining bytes only after the client has received the first emoji byte.
+          acknowledged = true;
+          child.stdin.write(`${JSON.stringify({ method: "test/ack-stdout-prefix" })}\n`);
+        });
+      },
+    },
+  );
+
+  assert.ok(acknowledged);
+  assert.deepEqual(response.result, { content: [{ type: "text", text }] });
 });
 
 test("runOneShotMcpRequest keeps only the final 20,000 stderr characters", async () => {
