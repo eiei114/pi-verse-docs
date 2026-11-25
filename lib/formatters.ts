@@ -2,7 +2,14 @@ const DEFAULT_MAX_CHARS = 12_000;
 
 function truncateText(value: string, maxChars = DEFAULT_MAX_CHARS): string {
   if (value.length <= maxChars) return value;
-  return `${value.slice(0, maxChars)}\n\n[truncated ${value.length - maxChars} chars]`;
+  let body = value.slice(0, maxChars);
+  const last = body.charCodeAt(body.length - 1);
+  const next = value.charCodeAt(body.length);
+  // Keep the UTF-16 budget, but never split a surrogate pair at the cutoff.
+  if (last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) {
+    body = body.slice(0, -1);
+  }
+  return `${body}\n\n[truncated ${value.length - body.length} chars]`;
 }
 
 function stringifyUnknown(value: unknown, maxChars = DEFAULT_MAX_CHARS): string {
