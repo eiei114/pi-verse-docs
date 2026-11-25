@@ -12,6 +12,13 @@ test("formatMcpTextResult truncates only when the input exceeds maxChars", () =>
   assert.equal(formatMcpTextResult("abcdef", 5), "abcde\n\n[truncated 1 chars]");
 });
 
+test("formatMcpTextResult truncates before a surrogate pair that straddles the cutoff", () => {
+  const text = "abc\u{1F600}d";
+  assert.equal(formatMcpTextResult(text, 4), "abc\n\n[truncated 3 chars]");
+  assert.equal(formatMcpTextResult(text, 5), "abc\u{1F600}\n\n[truncated 1 chars]");
+  assert.equal(formatMcpTextResult(text, 6), text);
+});
+
 test("formatMcpTextResult joins text content and serializes other items", () => {
   const result = {
     content: [
@@ -62,5 +69,12 @@ test("formatCacheAllResult truncates the body before appending the cache directo
   assert.equal(
     formatCacheAllResult("abcdef", "/cache/verse-mcp", 3),
     "abc\n\n[truncated 3 chars]\n\nCache dir: /cache/verse-mcp",
+  );
+});
+
+test("formatCacheAllResult preserves the cache suffix when backing up over a split pair", () => {
+  assert.equal(
+    formatCacheAllResult("\u{1F600}d", "/cache/verse-mcp", 1),
+    "\n\n[truncated 3 chars]\n\nCache dir: /cache/verse-mcp",
   );
 });
